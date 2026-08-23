@@ -354,8 +354,9 @@ export function DashboardPage() {
                   {[
                     ['Base de apertura', money(cash.openingAmount), false],
                     ['Ventas en efectivo', money(cash.cashSalesTotalSoFar), false],
+                    ['Transferencias', money((cash.salesByPaymentMethodSoFar as any)?.TRANSFER || 0), false],
                     ['Utilidad del turno', cash.profitTotalSoFar !== null ? money(cash.profitTotalSoFar) : '—', false],
-                    ['Efectivo esperado', money(cash.openingAmount + cash.cashSalesTotalSoFar), true],
+                    ['Efectivo esperado en caja', money(cash.openingAmount + cash.cashSalesTotalSoFar), true],
                   ].map(([label, value, strong]) => (
                     <div key={String(label)} className="flex items-center justify-between">
                       <dt
@@ -378,7 +379,7 @@ export function DashboardPage() {
                   ))}
                 </dl>
                 <p className="mt-3 border-t border-slate-200 pt-3 text-[11px] text-slate-400 dark:border-slate-800">
-                  Tarjeta y transferencia no suman al efectivo esperado.
+                  Total turno: <span className="font-semibold text-blue-600 dark:text-blue-400">{money(cash.openingAmount + cash.salesTotalSoFar)}</span> (Base + Todas las ventas)
                 </p>
               </>
             ) : (

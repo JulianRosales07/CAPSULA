@@ -151,44 +151,68 @@ export function CloseShiftSummaryModal({ open, register, onClose }: Props) {
           )}
 
 
-          {/* Arqueo de caja */}
+          {/* Arqueo de caja consolidado y desglosado */}
           <div className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-800">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Arqueo de efectivo</h3>
-            <div className="mt-3 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Arqueo y conciliación de turno</h3>
+            <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/50 p-1 dark:border-slate-800 dark:bg-slate-800/40">
               <table className="w-full text-sm">
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  <tr>
-                    <td className="px-4 py-2.5 text-slate-500 dark:text-slate-400">Monto de apertura</td>
-                    <td className="px-4 py-2.5 text-right font-medium text-slate-900 dark:text-white">
+                <tbody className="divide-y divide-slate-200/80 dark:divide-slate-700/80">
+                  <tr className="bg-emerald-50/40 dark:bg-emerald-950/20">
+                    <td className="px-4 py-2.5 font-medium text-emerald-900 dark:text-emerald-300">
+                      💵 Base de apertura (Efectivo inicial)
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-emerald-900 dark:text-emerald-300">
                       {money(register.openingAmount)}
                     </td>
                   </tr>
                   <tr>
-                    <td className="px-4 py-2.5 text-slate-500 dark:text-slate-400">
-                      Ventas en efectivo del turno
+                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">
+                      (+) Ventas en efectivo del turno
                     </td>
                     <td className="px-4 py-2.5 text-right font-medium text-slate-900 dark:text-white">
                       {money(register.cashSalesTotal ?? 0)}
                     </td>
                   </tr>
                   <tr>
-                    <td className="px-4 py-2.5 text-slate-500 dark:text-slate-400">Efectivo esperado</td>
-                    <td className="px-4 py-2.5 text-right font-medium text-slate-900 dark:text-white">
+                    <td className="px-4 py-2.5 text-purple-700 dark:text-purple-300 font-medium">
+                      (+) Transferencias bancarias (Nequi/Daviplata/Banco)
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-purple-700 dark:text-purple-300">
+                      {money((register.byPaymentMethod as any)?.TRANSFER || 0)}
+                    </td>
+                  </tr>
+                  {((register.byPaymentMethod as any)?.CARD || 0) > 0 && (
+                    <tr>
+                      <td className="px-4 py-2.5 text-blue-700 dark:text-blue-300 font-medium">
+                        (+) Pagos con tarjeta
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-semibold text-blue-700 dark:text-blue-300">
+                        {money((register.byPaymentMethod as any)?.CARD || 0)}
+                      </td>
+                    </tr>
+                  )}
+                  <tr className="bg-slate-100/70 font-semibold dark:bg-slate-800">
+                    <td className="px-4 py-2.5 text-slate-800 dark:text-slate-200">
+                      (=) Total esperado consolidado del turno
+                    </td>
+                    <td className="px-4 py-2.5 text-right text-blue-600 dark:text-blue-400">
                       {money(register.expectedAmount ?? 0)}
                     </td>
                   </tr>
                   <tr>
-                    <td className="px-4 py-2.5 text-slate-500 dark:text-slate-400">Efectivo contado</td>
-                    <td className="px-4 py-2.5 text-right font-medium text-slate-900 dark:text-white">
+                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">
+                      Monto reportado al cierre
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-slate-900 dark:text-white">
                       {money(register.closingAmount ?? 0)}
                     </td>
                   </tr>
-                  <tr>
-                    <td className="px-4 py-2.5 font-medium text-slate-700 dark:text-slate-200">
-                      Diferencia
+                  <tr className="bg-white dark:bg-slate-900 font-bold">
+                    <td className="px-4 py-2.5 text-slate-800 dark:text-slate-200">
+                      Diferencia de arqueo final
                     </td>
-                    <td className={`px-4 py-2.5 text-right font-semibold ${differenceTone}`}>
-                      {money(difference)}
+                    <td className={`px-4 py-2.5 text-right ${differenceTone}`}>
+                      {difference === 0 ? '✅ Sin diferencia ($0)' : difference > 0 ? `+${money(difference)}` : money(difference)}
                     </td>
                   </tr>
                 </tbody>
@@ -196,9 +220,10 @@ export function CloseShiftSummaryModal({ open, register, onClose }: Props) {
             </div>
 
             {register.closingNote && (
-              <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                Nota de cierre: {register.closingNote}
-              </p>
+              <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-xs dark:border-slate-800 dark:bg-slate-800">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Nota de cierre: </span>
+                <span className="text-slate-500 dark:text-slate-400">{register.closingNote}</span>
+              </div>
             )}
           </div>
         </div>

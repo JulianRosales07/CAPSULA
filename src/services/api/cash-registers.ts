@@ -25,6 +25,9 @@ export type CashRegister = {
 export type CurrentCashRegister = CashRegister & {
   salesTotalSoFar: number;
   cashSalesTotalSoFar: number;
+  transferSalesTotalSoFar?: number;
+  cardSalesTotalSoFar?: number;
+  pendingSalesTotalSoFar?: number;
   salesCountSoFar: number;
   salesByPaymentMethodSoFar: Record<PaymentMethod, number>;
   /** Costo de lo vendido en el turno. null si no se pudo calcular */
