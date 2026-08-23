@@ -100,3 +100,8 @@ export async function cancelReservation(reservationId: string): Promise<{ succes
   const response = await apiClient.patch(`/reservations/${reservationId}/cancel`);
   return response.data.data;
 }
+
+export async function deleteReservation(reservationId: string): Promise<{ success: boolean }> {
+  const response = await apiClient.delete(`/reservations/${reservationId}`);
+  return response.data.data;
+}

@@ -8,6 +8,7 @@ import {
   createReservation,
   addReservationAdvance,
   cancelReservation,
+  deleteReservation,
   type CourtReservation,
   type CreateReservationInput,
 } from '../../../services/api/reservations';
@@ -128,6 +129,18 @@ export function ReservationsPage() {
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Error al cancelar');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteReservation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['cash-register-current'] });
+      toast.success('Reserva eliminada correctamente');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Error al eliminar la reserva');
     },
   });
 
@@ -275,6 +288,12 @@ export function ReservationsPage() {
   const handleCancelReservation = (res: CourtReservation) => {
     if (confirm(`¿Estás seguro de cancelar la reserva de "${res.customerName}" para la ${res.courtName}?`)) {
       cancelMutation.mutate(res.id);
+    }
+  };
+
+  const handleDeleteReservation = (res: CourtReservation) => {
+    if (confirm(`¿Estás seguro de eliminar permanentemente la reserva de "${res.customerName}" para ${res.courtName}? Esta acción no se puede deshacer.`)) {
+      deleteMutation.mutate(res.id);
     }
   };
 
@@ -486,11 +505,21 @@ export function ReservationsPage() {
                           <button
                             onClick={() => handleCancelReservation(res)}
                             title="Cancelar reserva"
-                            className="rounded-lg border border-slate-200 p-1.5 text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-slate-700 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                            className="rounded-lg border border-slate-200 p-1.5 text-slate-400 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-600 dark:border-slate-700 dark:hover:bg-amber-950/40 dark:hover:text-amber-400"
                           >
                             ✕
                           </button>
                         )}
+
+                        {/* Botón Eliminar Permanente */}
+                        <button
+                          onClick={() => handleDeleteReservation(res)}
+                          disabled={deleteMutation.isPending}
+                          title="Eliminar reserva permanentemente"
+                          className="rounded-lg border border-slate-200 p-1.5 text-slate-400 transition hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:border-slate-700 dark:hover:bg-red-950/40 dark:hover:text-red-400 disabled:opacity-50"
+                        >
+                          🗑️
+                        </button>
                       </div>
                     </td>
                   </tr>
