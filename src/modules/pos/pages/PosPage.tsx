@@ -482,17 +482,37 @@ export function PosPage() {
     searchInputRef.current?.focus()
   }, [])
 
+  const normalizeText = (text: string) =>
+    text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return []
-    const query = searchQuery.toLowerCase()
+    const query = normalizeText(searchQuery.trim())
     return products
-      .filter((p) => p.isActive && p.stock > 0)
-      .filter(
-        (p) =>
-          p.name.toLowerCase().includes(query) ||
-          p.sku.toLowerCase().includes(query) ||
-          p.barcode?.toLowerCase().includes(query),
-      )
+      .filter((p) => p.isActive !== false)
+      .filter((p) => {
+        const nameMatch = normalizeText(p.name).includes(query)
+        const skuMatch = normalizeText(p.sku || '').includes(query)
+        const barcodeMatch = p.barcode ? normalizeText(p.barcode).includes(query) : false
+        const descMatch = p.description ? normalizeText(p.description).includes(query) : false
+        const unitMatch = p.units?.some(
+          (u) => normalizeText(u.name).includes(query) || (u.barcode && normalizeText(u.barcode).includes(query)),
+        )
+        return nameMatch || skuMatch || barcodeMatch || descMatch || unitMatch
+      })
+      .sort((a, b) => {
+        // Priorizar productos con stock disponible
+        const aHasStock = a.stock > 0 ? 1 : 0
+        const bHasStock = b.stock > 0 ? 1 : 0
+        if (aHasStock !== bHasStock) return bHasStock - aHasStock
+        // Priorizar coincidencia al inicio del nombre
+        const aStarts = normalizeText(a.name).startsWith(query) ? 1 : 0
+        const bStarts = normalizeText(b.name).startsWith(query) ? 1 : 0
+        return bStarts - aStarts
+      })
       .slice(0, 8)
   }, [products, searchQuery])
 
@@ -595,7 +615,7 @@ export function PosPage() {
 
   const addProductToCart = (product: Product, quantity: number = 1) => {
     if (product.stock <= 0) {
-      toast.error('Sin stock disponible')
+      toast.error(`"${product.name}" no tiene stock disponible (0 unidades).`)
       return
     }
 
@@ -1050,35 +1070,51 @@ export function PosPage() {
           </div>
 
           {searchQuery && filteredProducts.length > 0 && (
-            <div className="absolute left-4 right-4 top-full z-20 mt-1 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
-              {filteredProducts.map((product) => (
-                <button
-                  key={product.id}
-                  onClick={() => addProductToCart(product)}
-                  className="flex w-full items-center justify-between gap-4 border-b border-slate-100 px-4 py-2.5 text-left transition last:border-0 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700"
-                >
-                  <div className="min-w-0">
-                    <p className="text-xs text-slate-400">{product.sku}</p>
-                    <p className="truncate text-sm font-medium text-slate-900 dark:text-white">{product.name}</p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-4">
-                    <span
-                      className={`text-xs ${
-                        product.stock <= product.minStock ? 'font-semibold text-red-500' : 'text-slate-400'
-                      }`}
-                    >
-                      Stock {product.stock}
-                    </span>
-                    {product.units.length > 0 ? (
-                      <span className="rounded bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
-                        {product.units.length + 1} presentaciones
+            <div className="absolute left-4 right-4 top-full z-20 mt-1 max-h-80 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+              {filteredProducts.map((product) => {
+                const isOutOfStock = product.stock <= 0
+                return (
+                  <button
+                    key={product.id}
+                    onClick={() => addProductToCart(product)}
+                    className={`flex w-full items-center justify-between gap-4 border-b border-slate-100 px-4 py-2.5 text-left transition last:border-0 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700 ${
+                      isOutOfStock ? 'opacity-75 bg-slate-50/40 dark:bg-slate-900/30' : ''
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs text-slate-400">{product.sku}</p>
+                      <p className="truncate text-sm font-medium text-slate-900 dark:text-white flex items-center gap-1.5">
+                        {product.name}
+                        {isOutOfStock && (
+                          <span className="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                            Agotado
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-4">
+                      <span
+                        className={`text-xs ${
+                          isOutOfStock
+                            ? 'font-semibold text-red-500'
+                            : product.stock <= product.minStock
+                            ? 'font-semibold text-amber-500'
+                            : 'text-slate-400'
+                        }`}
+                      >
+                        {isOutOfStock ? 'Sin stock (0)' : `Stock ${product.stock}`}
                       </span>
-                    ) : (
-                      <span className="text-sm font-semibold text-slate-900 dark:text-white">{money(product.price)}</span>
-                    )}
-                  </div>
-                </button>
-              ))}
+                      {product.units.length > 0 ? (
+                        <span className="rounded bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
+                          {product.units.length + 1} presentaciones
+                        </span>
+                      ) : (
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white">{money(product.price)}</span>
+                      )}
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           )}
 
