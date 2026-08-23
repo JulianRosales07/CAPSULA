@@ -1,28 +1,33 @@
 import {
+  listProducts,
   createProduct,
+  updateProduct,
+  adjustProductStock,
   createProductUnit,
   listCategories,
   createCategory,
+  type Product,
 } from '../api/products'
 import type { ParsedProductRow } from './inventoryTemplate'
 
 export type ImportOutcome = {
   rowNumber: number
   sku: string
-  status: 'created' | 'error'
+  status: 'created' | 'updated' | 'error'
   message?: string
 }
 
 export type ImportSummary = {
   created: number
+  updated: number
   failed: number
   outcomes: ImportOutcome[]
 }
 
 /**
  * Importa filas de productos ya parseadas y validadas del Excel.
- * Optimizado con pre-creación de categorías y concurrencia por lotes (5 productos en paralelo)
- * para reducir drásticamente el tiempo total de importación.
+ * Soporta crear productos nuevos y actualizar existentes (incluyendo su stock).
+ * Optimizado con pre-creación de categorías y concurrencia por lotes (5 productos en paralelo).
  */
 export async function importInventoryRows(
   rows: ParsedProductRow[],
@@ -31,10 +36,17 @@ export async function importInventoryRows(
 ): Promise<ImportSummary> {
   onProgress?.(0, rows.length)
 
-  // 1. Pre-cargar categorías existentes
-  const existingCategories = await listCategories()
+  // 1. Pre-cargar productos existentes y categorías
+  const [existingCategories, existingProducts] = await Promise.all([
+    listCategories(),
+    listProducts(),
+  ])
+
   const categoryCache = new Map<string, string>(
     existingCategories.map((c) => [c.name.trim().toLowerCase(), c.id]),
+  )
+  const productCache = new Map<string, Product>(
+    existingProducts.map((p) => [p.sku.trim().toLowerCase(), p]),
   )
 
   // 2. Pre-crear todas las categorías únicas faltantes una sola vez
@@ -74,32 +86,88 @@ export async function importInventoryRows(
           categoryId = categoryCache.get(key) || null
         }
 
-        const product = await createProduct({
-          sku: row.sku,
-          barcode: row.barcode || undefined,
-          name: row.name,
-          description: row.description || undefined,
-          categoryId,
-          cost: row.cost,
-          price: row.price,
-          minStock: row.minStock,
-          isActive: row.isActive,
-          initialStock: row.initialStock,
-        })
+        const skuKey = row.sku.trim().toLowerCase()
+        const existingProduct = productCache.get(skuKey)
 
-        if (row.presentations && row.presentations.length > 0) {
-          for (const presentation of row.presentations) {
-            await createProductUnit(product.id, {
-              name: presentation.name,
-              factor: presentation.factor,
-              cost: presentation.cost,
-              price: presentation.price,
-              barcode: presentation.barcode || undefined,
-            })
+        if (existingProduct) {
+          // Producto ya existe: Actualizar datos
+          await updateProduct(existingProduct.id, {
+            sku: row.sku,
+            barcode: row.barcode || undefined,
+            name: row.name,
+            description: row.description || undefined,
+            categoryId,
+            cost: row.cost,
+            price: row.price,
+            minStock: row.minStock,
+            isActive: row.isActive,
+          })
+
+          // Si el stock indicado en el Excel es diferente al actual, ajustar stock
+          if (row.initialStock !== undefined && row.initialStock !== existingProduct.stock) {
+            await adjustProductStock(
+              existingProduct.id,
+              row.initialStock,
+              'Ajuste por importación de Excel',
+            )
           }
-        }
 
-        outcomes[idx] = { rowNumber: row.rowNumber, sku: row.sku, status: 'created' }
+          // Crear presentaciones que no existan
+          if (row.presentations && row.presentations.length > 0) {
+            const existingUnitNames = new Set(
+              (existingProduct.units || []).map((u) => u.name.trim().toLowerCase()),
+            )
+            for (const presentation of row.presentations) {
+              if (!existingUnitNames.has(presentation.name.trim().toLowerCase())) {
+                try {
+                  await createProductUnit(existingProduct.id, {
+                    name: presentation.name,
+                    factor: presentation.factor,
+                    cost: presentation.cost,
+                    price: presentation.price,
+                    barcode: presentation.barcode || undefined,
+                  })
+                } catch {
+                  // Continuar si falla una presentación
+                }
+              }
+            }
+          }
+
+          outcomes[idx] = { rowNumber: row.rowNumber, sku: row.sku, status: 'updated' }
+        } else {
+          // Producto nuevo: Crear
+          const product = await createProduct({
+            sku: row.sku,
+            barcode: row.barcode || undefined,
+            name: row.name,
+            description: row.description || undefined,
+            categoryId,
+            cost: row.cost,
+            price: row.price,
+            minStock: row.minStock,
+            isActive: row.isActive,
+            initialStock: row.initialStock,
+          })
+
+          if (row.presentations && row.presentations.length > 0) {
+            for (const presentation of row.presentations) {
+              try {
+                await createProductUnit(product.id, {
+                  name: presentation.name,
+                  factor: presentation.factor,
+                  cost: presentation.cost,
+                  price: presentation.price,
+                  barcode: presentation.barcode || undefined,
+                })
+              } catch {
+                // Continuar si falla una presentación
+              }
+            }
+          }
+
+          outcomes[idx] = { rowNumber: row.rowNumber, sku: row.sku, status: 'created' }
+        }
       } catch (error: any) {
         outcomes[idx] = {
           rowNumber: row.rowNumber,
@@ -122,6 +190,7 @@ export async function importInventoryRows(
 
   return {
     created: outcomes.filter((o) => o && o.status === 'created').length,
+    updated: outcomes.filter((o) => o && o.status === 'updated').length,
     failed: outcomes.filter((o) => o && o.status === 'error').length,
     outcomes: outcomes.filter(Boolean),
   }

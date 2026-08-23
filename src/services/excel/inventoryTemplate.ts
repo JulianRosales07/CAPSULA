@@ -155,6 +155,30 @@ function toNumber(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+function getRawValue(raw: Record<string, unknown>, ...candidates: string[]): unknown {
+  for (const k of candidates) {
+    if (raw[k] !== undefined && raw[k] !== '') return raw[k]
+  }
+  const normalizedCandidateKeys = candidates.map((c) =>
+    c
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[\s_-]/g, ''),
+  )
+  for (const [key, value] of Object.entries(raw)) {
+    const normKey = key
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[\s_-]/g, '')
+    if (normalizedCandidateKeys.includes(normKey)) {
+      if (value !== undefined && value !== '') return value
+    }
+  }
+  return undefined
+}
+
 /**
  * Lee un archivo .xlsx/.xls y devuelve las filas de productos parseadas,
  * junto con errores de validación básica (fila por fila, sin abortar todo el archivo).
@@ -162,7 +186,11 @@ function toNumber(value: unknown): number {
 export async function parseInventoryFile(file: File): Promise<ParseResult> {
   const buffer = await file.arrayBuffer()
   const workbook = XLSX.read(buffer, { type: 'array' })
-  const sheetName = workbook.SheetNames.includes('Productos') ? 'Productos' : workbook.SheetNames[0]
+  const sheetName = workbook.SheetNames.includes('Productos')
+    ? 'Productos'
+    : workbook.SheetNames.includes('Inventario')
+    ? 'Inventario'
+    : workbook.SheetNames[0]
   const sheet = workbook.Sheets[sheetName]
   const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' })
 
@@ -172,10 +200,14 @@ export async function parseInventoryFile(file: File): Promise<ParseResult> {
 
   rawRows.forEach((raw, index) => {
     const rowNumber = index + 2 // +1 por índice base 0, +1 por la fila de encabezado
-    const sku = String(raw.SKU ?? '').trim()
-    const name = String(raw.Nombre ?? '').trim()
-    const cost = toNumber(raw.Costo)
-    const price = toNumber(raw.PrecioVenta)
+    const sku = String(getRawValue(raw, 'SKU', 'Sku', 'sku', 'Codigo', 'Código', 'CODIGO') ?? '').trim()
+    const name = String(
+      getRawValue(raw, 'Nombre', 'nombre', 'Producto', 'producto', 'Name', 'name', 'Descripcion_Corta') ?? '',
+    ).trim()
+    const cost = toNumber(getRawValue(raw, 'Costo', 'costo', 'Precio Costo', 'PrecioCosto', 'Cost', 'cost'))
+    const price = toNumber(
+      getRawValue(raw, 'PrecioVenta', 'Precio Venta', 'Precio', 'precio', 'Price', 'price', 'PV'),
+    )
 
     if (!sku && !name) return // fila vacía, se ignora silenciosamente
 
@@ -204,11 +236,15 @@ export async function parseInventoryFile(file: File): Promise<ParseResult> {
 
     const presentations: ParsedProductRow['presentations'] = []
     for (const prefix of ['Presentacion1', 'Presentacion2', 'Presentacion3']) {
-      const pName = String(raw[`${prefix}_Nombre`] ?? '').trim()
-      const pFactor = toNumber(raw[`${prefix}_Unidades`])
-      const pCost = toNumber(raw[`${prefix}_Costo`])
-      const pPrice = toNumber(raw[`${prefix}_Precio`])
-      const pBarcode = String(raw[`${prefix}_CodigoBarras`] ?? '').trim()
+      const pName = String(getRawValue(raw, `${prefix}_Nombre`, `${prefix} Nombre`, `${prefix}_Name`) ?? '').trim()
+      const pFactor = toNumber(
+        getRawValue(raw, `${prefix}_Unidades`, `${prefix} Unidades`, `${prefix}_Factor`, `${prefix} Factor`),
+      )
+      const pCost = toNumber(getRawValue(raw, `${prefix}_Costo`, `${prefix} Costo`, `${prefix}_Cost`))
+      const pPrice = toNumber(getRawValue(raw, `${prefix}_Precio`, `${prefix} Precio`, `${prefix}_Price`))
+      const pBarcode = String(
+        getRawValue(raw, `${prefix}_CodigoBarras`, `${prefix} CodigoBarras`, `${prefix}_Barcode`) ?? '',
+      ).trim()
 
       if (!pName && !pFactor && !pPrice) continue // slot vacío
 
@@ -223,18 +259,55 @@ export async function parseInventoryFile(file: File): Promise<ParseResult> {
       presentations.push({ name: pName, factor: pFactor, cost: pCost, price: pPrice, barcode: pBarcode })
     }
 
+    const rawStock = getRawValue(
+      raw,
+      'StockInicial',
+      'Stock Inicial',
+      'Stock',
+      'stock',
+      'Stock Actual',
+      'Stock actual',
+      'Cantidad',
+      'cantidad',
+      'Existencias',
+      'existencias',
+      'Inventario',
+      'inventario',
+    )
+    const rawMinStock = getRawValue(
+      raw,
+      'StockMinimo',
+      'Stock Minimo',
+      'Stock Mínimo',
+      'minStock',
+      'Minimo',
+      'Mínimo',
+    )
+    const rawActive = getRawValue(raw, 'Activo', 'activo', 'Estado', 'estado', 'Active', 'active')
+    const rawBarcode = getRawValue(
+      raw,
+      'CodigoBarras',
+      'Codigo de Barras',
+      'Código de Barras',
+      'Barcode',
+      'barcode',
+      'Barras',
+    )
+    const rawDesc = getRawValue(raw, 'Descripcion', 'descripcion', 'Descripción', 'Description')
+    const rawCat = getRawValue(raw, 'Categoria', 'categoria', 'Categoría', 'Category')
+
     rows.push({
       rowNumber,
       sku,
-      barcode: String(raw.CodigoBarras ?? '').trim(),
+      barcode: String(rawBarcode ?? '').trim(),
       name,
-      description: String(raw.Descripcion ?? '').trim(),
-      categoryName: String(raw.Categoria ?? '').trim(),
+      description: String(rawDesc ?? '').trim(),
+      categoryName: String(rawCat ?? '').trim(),
       cost,
       price,
-      initialStock: Math.max(0, toNumber(raw.StockInicial)),
-      minStock: Math.max(0, toNumber(raw.StockMinimo)),
-      isActive: toBoolean(raw.Activo),
+      initialStock: Math.max(0, toNumber(rawStock)),
+      minStock: Math.max(0, toNumber(rawMinStock)),
+      isActive: toBoolean(rawActive),
       presentations,
     })
   })

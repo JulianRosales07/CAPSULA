@@ -220,13 +220,21 @@ export function ImportInventoryModal({ open, onClose }: ImportInventoryModalProp
 
           {step === 'done' && summary && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-800 dark:bg-emerald-500/10">
                   <p className="text-2xl font-semibold text-emerald-700 dark:text-emerald-400">
                     {summary.created}
                   </p>
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400">Productos creados</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">Productos nuevos</p>
                 </div>
+                {summary.updated > 0 && (
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800 dark:bg-blue-500/10">
+                    <p className="text-2xl font-semibold text-blue-700 dark:text-blue-400">
+                      {summary.updated}
+                    </p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400">Actualizados</p>
+                  </div>
+                )}
                 {summary.failed > 0 && (
                   <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 dark:border-red-800 dark:bg-red-500/10">
                     <p className="text-2xl font-semibold text-red-700 dark:text-red-400">
