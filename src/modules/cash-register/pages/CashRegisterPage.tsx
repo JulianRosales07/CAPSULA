@@ -239,102 +239,119 @@ export function CashRegisterPage() {
           <div className="py-6 text-center text-sm text-slate-400">Cargando estado de caja…</div>
         ) : current ? (
           <div className="space-y-6">
-            {/* Tarjetas informativas del turno */}
-            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-800/80">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Abierta desde</p>
-                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                    En curso
-                  </span>
+            {/* Banner de Guía Principal: ¿Qué dinero debo tener al final? */}
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    💰 ¿Cuánto dinero debe haber al finalizar el turno?
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    El dinero se divide en lo que está físicamente en el cajón y lo que está en cuentas bancarias.
+                  </p>
                 </div>
-                <p className="mt-1 text-base font-semibold text-slate-900 dark:text-white">
-                  {formatDateTime(current.openedAt)}
-                </p>
-                <p className="mt-0.5 text-xs text-slate-400">Por: {current.openedByName ?? 'Usuario'}</p>
+                <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Turno en curso
+                </span>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-800/80">
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Base de apertura</p>
-                <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
-                  {money(current.openingAmount)}
-                </p>
-                <p className="mt-0.5 text-xs text-slate-400">Efectivo inicial en gaveta</p>
-              </div>
-
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/20">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">💵 Efectivo esperado en caja</p>
+              {/* 3 Tarjetas Principales y Claras */}
+              <div className="grid gap-3.5 sm:grid-cols-3">
+                {/* 1. Efectivo Físico */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-50/80 to-emerald-100/40 p-4.5 shadow-sm dark:border-emerald-500/30 dark:from-emerald-950/40 dark:to-emerald-900/20">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white shadow-xs">
+                      💵 1. DINERO EN CAJÓN
+                    </span>
+                    <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">Físico</span>
+                  </div>
+                  <p className="mt-2 text-3xl font-extrabold tracking-tight text-emerald-800 dark:text-emerald-300">
+                    {money(expectedCashInDrawer)}
+                  </p>
+                  <div className="mt-2 border-t border-emerald-200/60 pt-2 dark:border-emerald-800/40">
+                    <p className="text-xs font-medium text-emerald-900 dark:text-emerald-200">
+                      Base ({money(opening)}) + Ventas efectivo ({money(cashSales)})
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
+                      👉 Lo que debes contar en billetes y monedas.
+                    </p>
+                  </div>
                 </div>
-                <p className="mt-1 text-2xl font-bold text-emerald-700 dark:text-emerald-400">
-                  {money(expectedCashInDrawer)}
-                </p>
-                <p className="mt-0.5 text-xs text-emerald-600/80 dark:text-emerald-400/80">
-                  Base ({money(opening)}) + Ventas efectivo ({money(cashSales)})
-                </p>
+
+                {/* 2. Transferencias Bancarias */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-purple-500/40 bg-gradient-to-br from-purple-50/80 to-purple-100/40 p-4.5 shadow-sm dark:border-purple-500/30 dark:from-purple-950/40 dark:to-purple-900/20">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-purple-600 px-2 py-0.5 text-xs font-bold text-white shadow-xs">
+                      📱 2. DINERO EN BANCOS
+                    </span>
+                    <span className="text-[11px] font-semibold text-purple-700 dark:text-purple-300">Electrónico</span>
+                  </div>
+                  <p className="mt-2 text-3xl font-extrabold tracking-tight text-purple-800 dark:text-purple-300">
+                    {money(expectedTransfers)}
+                  </p>
+                  <div className="mt-2 border-t border-purple-200/60 pt-2 dark:border-purple-800/40">
+                    <p className="text-xs font-medium text-purple-900 dark:text-purple-200">
+                      Nequi, Daviplata y Bancolombia
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-purple-700/80 dark:text-purple-400/80">
+                      👉 Lo que debes verificar en tus apps/cuentas.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 3. Total General */}
+                <div className="relative overflow-hidden rounded-2xl border-2 border-blue-500/40 bg-gradient-to-br from-blue-50/80 to-blue-100/40 p-4.5 shadow-sm dark:border-blue-500/30 dark:from-blue-950/40 dark:to-blue-900/20">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-2 py-0.5 text-xs font-bold text-white shadow-xs">
+                      📊 TOTAL DEL TURNO
+                    </span>
+                    <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-300">Consolidado</span>
+                  </div>
+                  <p className="mt-2 text-3xl font-extrabold tracking-tight text-blue-800 dark:text-blue-300">
+                    {money(expectedTotalTurn)}
+                  </p>
+                  <div className="mt-2 border-t border-blue-200/60 pt-2 dark:border-blue-800/40">
+                    <p className="text-xs font-medium text-blue-900 dark:text-blue-200">
+                      Ventas totales ({money(totalSales)}) + Base ({money(opening)})
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-blue-700/80 dark:text-blue-400/80">
+                      👉 Suma total de Cajón ($ {money(expectedCashInDrawer)}) + Bancos ($ {money(expectedTransfers)}).
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-4 shadow-sm dark:border-purple-900/60 dark:bg-purple-950/20">
-                <p className="text-xs font-semibold text-purple-800 dark:text-purple-300">🏦 Transferencias del turno</p>
-                <p className="mt-1 text-2xl font-bold text-purple-700 dark:text-purple-400">
-                  {money(expectedTransfers)}
-                </p>
-                <p className="mt-0.5 text-xs text-purple-600/80 dark:text-purple-400/80">
-                  Nequi, Daviplata, Bancolombia
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 shadow-sm dark:border-blue-900/60 dark:bg-blue-950/20">
-                <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">📊 Total recaudado turno</p>
-                <p className="mt-1 text-2xl font-bold text-blue-700 dark:text-blue-400">
-                  {money(totalSales)}
-                </p>
-                <p className="mt-0.5 text-xs text-blue-600/80 dark:text-blue-400/80">
-                  {current.salesCountSoFar} venta(s) registradas
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-800/80">
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total esperado consolidado</p>
-                <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
-                  {money(expectedTotalTurn)}
-                </p>
-                <p className="mt-0.5 text-xs text-slate-400">Base + Todas las ventas recaudadas</p>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-800/80">
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Costo de lo vendido (COGS)</p>
-                <p className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400">
-                  {current.cogsTotalSoFar !== null ? money(current.cogsTotalSoFar) : '—'}
-                </p>
-                <p className="mt-0.5 text-xs text-slate-400">Costo de adquisición</p>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-800/80">
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Utilidad del turno</p>
-                <p
-                  className={`mt-1 text-2xl font-bold ${
-                    (current.profitTotalSoFar ?? 0) >= 0
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-red-600 dark:text-red-400'
-                  }`}
-                >
-                  {current.profitTotalSoFar !== null ? money(current.profitTotalSoFar) : '—'}
-                </p>
-                <p className="mt-0.5 text-xs text-slate-400">Margen bruto generado</p>
+              {/* Fila compacta de detalles secundarios */}
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-xs dark:border-slate-800 dark:bg-slate-900/60">
+                <div>
+                  <span className="text-slate-400">Abierta:</span>{' '}
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">{formatDateTime(current.openedAt)}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400">Responsable:</span>{' '}
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">{current.openedByName ?? 'Usuario'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400">Ventas hechas:</span>{' '}
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">{current.salesCountSoFar} facturas ({money(totalSales)})</span>
+                </div>
+                <div>
+                  <span className="text-slate-400">Ganancia bruta:</span>{' '}
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">{current.profitTotalSoFar !== null ? money(current.profitTotalSoFar) : '—'}</span>
+                </div>
               </div>
             </div>
 
             {/* Desglose por método de pago */}
             {current.salesByPaymentMethodSoFar && (
               <div>
-                <h3 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Ventas registradas por método de pago
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Desglose de ventas según cómo pagaron los clientes
                 </h3>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                   {([
                     ['CASH', '💵', 'Efectivo', cashSales],
-                    ['TRANSFER', '🏦', 'Transferencia', transferSales],
+                    ['TRANSFER', '📱', 'Transferencia', transferSales],
                     ['CARD', '💳', 'Tarjeta', cardSales],
                     ['PENDING', '⏳', 'Fiado (Por cobrar)', pendingSales],
                     ['OTHER', '🔄', 'Otro', otherSales],
@@ -343,7 +360,7 @@ export function CashRegisterPage() {
                     return (
                       <div
                         key={key}
-                        className={`rounded-xl border p-3.5 transition ${
+                        className={`rounded-xl border p-3 transition ${
                           key === 'TRANSFER' && val > 0
                             ? 'border-purple-200 bg-purple-50/40 dark:border-purple-800/60 dark:bg-purple-950/20'
                             : key === 'CASH' && val > 0
@@ -357,7 +374,7 @@ export function CashRegisterPage() {
                           {icon} {label}
                         </p>
                         <p
-                          className={`mt-1.5 text-lg font-bold ${
+                          className={`mt-1 text-base font-bold ${
                             key === 'TRANSFER' && val > 0
                               ? 'text-purple-700 dark:text-purple-300'
                               : key === 'CASH' && val > 0
@@ -370,7 +387,7 @@ export function CashRegisterPage() {
                           {money(val)}
                         </p>
                         {isPending && val > 0 && (
-                          <p className="mt-0.5 text-[10px] text-amber-600 dark:text-amber-400">Pendiente de recaudo</p>
+                          <p className="mt-0.5 text-[10px] text-amber-600 dark:text-amber-400">Por cobrar</p>
                         )}
                       </div>
                     )
@@ -380,166 +397,176 @@ export function CashRegisterPage() {
             )}
 
             {/* SECCIÓN DE CIERRE Y ARQUEO DE CAJA */}
-            <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100/60 p-5 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-800/60">
+            <div className="rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                    🔒 Arqueo y Cierre de Caja
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>🔒</span> Cerrar Turno y Cuadrar Caja
                   </h3>
                   <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                    Ingresa el efectivo contado en gaveta y las transferencias verificadas en cuentas bancarias.
+                    Ingresa lo que tienes en el cajón y lo que verificaste en transferencias bancarias:
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
-                    onClick={handleFillExactCash}
-                    className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-                  >
-                    💵 Copiar efectivo esperado
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleFillExactTransfer}
-                    className="inline-flex items-center gap-1 rounded-lg border border-purple-300 bg-purple-50 px-2.5 py-1.5 text-xs font-semibold text-purple-700 transition hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300"
-                  >
-                    🏦 Copiar transferencias esperadas
-                  </button>
-                  <button
-                    type="button"
                     onClick={handleFillExactAll}
-                    className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow transition hover:bg-blue-700"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700"
                   >
-                    ⚡ Cuadrar todo exacto
+                    ⚡ Cuadrar todo exacto con el sistema
                   </button>
                 </div>
               </div>
 
-              {/* Formulario de Arqueo Dual */}
-              <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                {/* 1. Arqueo de Efectivo Físico */}
-                <div className="rounded-xl border border-emerald-200 bg-white p-4 shadow-sm dark:border-emerald-900/50 dark:bg-slate-800">
+              {/* Formulario de Arqueo en 2 Pasos */}
+              <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                {/* Paso 1. Arqueo de Efectivo Físico */}
+                <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50/30 p-4.5 dark:border-emerald-800/80 dark:bg-emerald-950/20">
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
-                      💵 Arqueo de Efectivo Físico (Gaveta)
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wide">
+                      💵 Paso 1: Cuenta el dinero físico del cajón
                     </span>
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                      Esperado: <span className="text-emerald-700 dark:text-emerald-300 font-bold">{money(expectedCashInDrawer)}</span>
+                    <button
+                      type="button"
+                      onClick={handleFillExactCash}
+                      className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 underline dark:text-emerald-400"
+                    >
+                      ⚡ Copiar esperado
+                    </button>
+                  </div>
+                  
+                  <div className="mt-2 rounded-lg bg-emerald-100/60 p-2.5 text-xs text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-200">
+                    <span>Debes tener en gaveta: </span>
+                    <span className="font-extrabold text-sm text-emerald-800 dark:text-emerald-300">{money(expectedCashInDrawer)}</span>
+                    <span className="block text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
+                      Base ({money(opening)}) + Ventas en efectivo ({money(cashSales)})
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Base ({money(opening)}) + Ventas en efectivo ({money(cashSales)})
-                  </p>
 
                   <div className="mt-3">
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                      Efectivo contado en billetes y monedas:
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      ¿Cuánto dinero en billetes y monedas contaste en el cajón?
                     </label>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={closingCashAmount}
-                      onChange={(e) => setClosingCashAmount(e.target.value)}
-                      placeholder={`Ej: ${expectedCashInDrawer}`}
-                      className="mt-1 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-base font-bold text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                    />
+                    <div className="relative mt-1">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm font-bold text-slate-400">$</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={closingCashAmount}
+                        onChange={(e) => setClosingCashAmount(e.target.value)}
+                        placeholder={`Ej: ${expectedCashInDrawer}`}
+                        className="w-full rounded-xl border border-slate-300 pl-8 pr-3.5 py-2.5 text-lg font-extrabold text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      />
+                    </div>
 
                     {cashDiff !== null && (
                       <div
-                        className={`mt-2 flex items-center justify-between rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                        className={`mt-2 flex items-center justify-between rounded-lg px-3 py-2 text-xs font-bold ${
                           cashDiff === 0
-                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
                             : cashDiff > 0
-                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
-                            : 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300'
+                            : 'bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300'
                         }`}
                       >
                         <span>
                           {cashDiff === 0
-                            ? '✅ Efectivo exacto (sin descuadre)'
+                            ? '✅ Efectivo en cajón exacto (Sin descuadre)'
                             : cashDiff > 0
-                            ? `Sobran en efectivo:`
-                            : `Faltan en efectivo:`}
+                            ? '➕ Sobran en efectivo en cajón:'
+                            : '❌ Faltan en efectivo en cajón:'}
                         </span>
-                        <span>{cashDiff > 0 ? `+${money(cashDiff)}` : money(cashDiff)}</span>
+                        <span className="text-sm">{cashDiff > 0 ? `+${money(cashDiff)}` : money(cashDiff)}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* 2. Arqueo de Transferencias Electrónicas */}
-                <div className="rounded-xl border border-purple-200 bg-white p-4 shadow-sm dark:border-purple-900/50 dark:bg-slate-800">
+                {/* Paso 2. Arqueo de Transferencias Bancarias */}
+                <div className="rounded-xl border-2 border-purple-300 bg-purple-50/30 p-4.5 dark:border-purple-800/80 dark:bg-purple-950/20">
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">
-                      🏦 Arqueo de Transferencias (Bancos/Billeteras)
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-purple-800 dark:text-purple-300 uppercase tracking-wide">
+                      📱 Paso 2: Verifica el dinero en cuentas/Nequi
                     </span>
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                      Esperado: <span className="text-purple-700 dark:text-purple-300 font-bold">{money(expectedTransfers)}</span>
+                    <button
+                      type="button"
+                      onClick={handleFillExactTransfer}
+                      className="text-[11px] font-bold text-purple-700 hover:text-purple-800 underline dark:text-purple-400"
+                    >
+                      ⚡ Copiar esperado
+                    </button>
+                  </div>
+
+                  <div className="mt-2 rounded-lg bg-purple-100/60 p-2.5 text-xs text-purple-900 dark:bg-purple-900/30 dark:text-purple-200">
+                    <span>Debes tener en bancos/Nequi: </span>
+                    <span className="font-extrabold text-sm text-purple-800 dark:text-purple-300">{money(expectedTransfers)}</span>
+                    <span className="block text-[11px] text-purple-700 dark:text-purple-400 mt-0.5">
+                      Recibido por transferencias durante el turno
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Total transferencias registradas en Nequi, Daviplata y Bancolombia
-                  </p>
 
                   <div className="mt-3">
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                      Transferencias verificadas en comprobantes/cuentas:
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      ¿Cuánto dinero verificaste en comprobantes/apps bancarias?
                     </label>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={closingTransferAmount}
-                      onChange={(e) => setClosingTransferAmount(e.target.value)}
-                      placeholder={`Ej: ${expectedTransfers}`}
-                      className="mt-1 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-base font-bold text-slate-900 shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                    />
+                    <div className="relative mt-1">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm font-bold text-slate-400">$</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={closingTransferAmount}
+                        onChange={(e) => setClosingTransferAmount(e.target.value)}
+                        placeholder={`Ej: ${expectedTransfers}`}
+                        className="w-full rounded-xl border border-slate-300 pl-8 pr-3.5 py-2.5 text-lg font-extrabold text-slate-900 shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-400/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      />
+                    </div>
 
                     {transferDiff !== null && (
                       <div
-                        className={`mt-2 flex items-center justify-between rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                        className={`mt-2 flex items-center justify-between rounded-lg px-3 py-2 text-xs font-bold ${
                           transferDiff === 0
-                            ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300'
+                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300'
                             : transferDiff > 0
-                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
-                            : 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300'
+                            : 'bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300'
                         }`}
                       >
                         <span>
                           {transferDiff === 0
-                            ? '✅ Transferencias exactas verificadas'
+                            ? '✅ Transferencias verificadas exactas'
                             : transferDiff > 0
-                            ? `Sobran en transferencias:`
-                            : `Faltan en transferencias:`}
+                            ? '➕ Sobran en transferencias:'
+                            : '❌ Faltan en transferencias:'}
                         </span>
-                        <span>{transferDiff > 0 ? `+${money(transferDiff)}` : money(transferDiff)}</span>
+                        <span className="text-sm">{transferDiff > 0 ? `+${money(transferDiff)}` : money(transferDiff)}</span>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Consolidación y Botón de Cierre */}
-              <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-800">
+              {/* Barra de Confirmación y Cierre Final */}
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/80">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                      Resumen del arqueo consolidado:
+                    <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                      Resumen final del cierre:
                     </p>
                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="rounded bg-slate-100 px-2 py-0.5 font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
-                        Total esperado: {money(expectedTotalTurn)}
+                      <span className="rounded-lg bg-white px-2.5 py-1 font-semibold text-slate-700 shadow-xs dark:bg-slate-700 dark:text-slate-200">
+                        Esperado total: {money(expectedTotalTurn)}
                       </span>
                       {hasEnteredAmounts && (
                         <>
                           <span>→</span>
-                          <span className="rounded bg-blue-50 px-2 py-0.5 font-bold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
-                            Total reportado: {money(totalReported)}
+                          <span className="rounded-lg bg-blue-50 px-2.5 py-1 font-bold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                            Entregado: {money(totalReported)} (Cajón {money(Number.isNaN(parsedCash) ? 0 : parsedCash)} + Bancos {money(Number.isNaN(parsedTransfer) ? 0 : parsedTransfer)})
                           </span>
                           {totalDiff !== null && (
                             <span
-                              className={`rounded px-2 py-0.5 font-bold ${
+                              className={`rounded-lg px-2.5 py-1 font-bold ${
                                 totalDiff === 0
                                   ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
                                   : totalDiff > 0
@@ -565,13 +592,13 @@ export function CashRegisterPage() {
                       value={closingNote}
                       onChange={(e) => setClosingNote(e.target.value)}
                       placeholder="Nota u observaciones del cierre (opcional)"
-                      className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      className="flex-1 rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                     />
                     <button
                       type="button"
                       onClick={handleClose}
                       disabled={closeMutation.isPending}
-                      className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-red-700 disabled:opacity-60"
+                      className="rounded-xl bg-red-600 px-6 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-red-700 disabled:opacity-60"
                     >
                       {closeMutation.isPending ? 'Cerrando caja...' : '🔒 Cerrar turno'}
                     </button>
