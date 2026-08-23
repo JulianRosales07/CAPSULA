@@ -482,6 +482,12 @@ export function PosPage() {
     searchInputRef.current?.focus()
   }, [])
 
+  useEffect(() => {
+    if (receiptConfig.autoPrint !== undefined) {
+      setAutoPrintEnabled(receiptConfig.autoPrint)
+    }
+  }, [receiptConfig.autoPrint])
+
   const normalizeText = (text: string) =>
     text
       .toLowerCase()

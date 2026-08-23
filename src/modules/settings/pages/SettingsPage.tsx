@@ -18,6 +18,7 @@ type GeneralFormValues = {
   branchName: string
   cashierName: string
   notifications: boolean
+  autoPrint: boolean
   theme: 'light' | 'dark'
 }
 
@@ -70,6 +71,7 @@ export function SettingsPage() {
       branchName: 'Droguería Principal',
       cashierName: 'Caja 1',
       notifications: true,
+      autoPrint: true,
       theme: currentTheme,
     },
   })
@@ -81,6 +83,7 @@ export function SettingsPage() {
       branchName: get('branchName') ?? 'Droguería Principal',
       cashierName: get('cashierName') ?? 'Caja 1',
       notifications: get('notifications') !== 'false',
+      autoPrint: get('autoPrint') !== 'false',
       theme: (get('theme') as 'light' | 'dark') ?? currentTheme,
     })
   }, [dbSettings])
@@ -91,6 +94,7 @@ export function SettingsPage() {
         branchName: v.branchName,
         cashierName: v.cashierName,
         notifications: v.notifications ? 'true' : 'false',
+        autoPrint: v.autoPrint ? 'true' : 'false',
         theme: v.theme,
       }),
     onSuccess: (_, v) => {
@@ -99,6 +103,21 @@ export function SettingsPage() {
       toast.success('Configuración general guardada')
     },
     onError: () => toast.error('Error al guardar'),
+  })
+
+  const autoPrintSetting = dbSettings.find((s) => s.key === 'autoPrint')?.value !== 'false'
+
+  const toggleAutoPrintMutation = useMutation({
+    mutationFn: async (nextVal: boolean) =>
+      persistSettings({
+        autoPrint: nextVal ? 'true' : 'false',
+      }),
+    onSuccess: (_, nextVal) => {
+      queryClient.invalidateQueries({ queryKey: ['settings'] })
+      generalForm.setValue('autoPrint', nextVal)
+      toast.success(nextVal ? 'Impresión automática activada' : 'Impresión automática desactivada')
+    },
+    onError: () => toast.error('Error al cambiar configuración de impresión'),
   })
 
   // ─── Receipt form + live preview ──────────────────────────────────────────
@@ -124,6 +143,7 @@ export function SettingsPage() {
       showUnitPrice: get('showUnitPrice') !== 'false',
       showLineTotal: get('showLineTotal') !== 'false',
       separatorStyle: (get('separatorStyle') as ReceiptConfig['separatorStyle']) ?? RECEIPT_CONFIG_DEFAULTS.separatorStyle,
+      autoPrint: (dbSettings.find((s) => s.key === 'autoPrint')?.value ?? get('autoPrint')) !== 'false',
     }
     receiptForm.reset(loaded)
     setPreviewConfig(loaded)
@@ -219,11 +239,28 @@ export function SettingsPage() {
                 </select>
               </label>
 
-              <label className="flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-2.5 dark:border-slate-700 dark:bg-slate-800">
-                <input type="checkbox" className="size-4" {...generalForm.register('notifications')} />
-                <span className="text-sm text-slate-700 dark:text-slate-200">
-                  Activar notificaciones de stock y ventas
-                </span>
+              <label className="flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-2.5 dark:border-slate-700 dark:bg-slate-800 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-750 transition">
+                <input type="checkbox" className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" {...generalForm.register('notifications')} />
+                <div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200 block">
+                    Notificaciones
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 block">
+                    Activar notificaciones de stock y ventas
+                  </span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-2.5 dark:border-slate-700 dark:bg-slate-800 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-750 transition">
+                <input type="checkbox" className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" {...generalForm.register('autoPrint')} />
+                <div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200 block">
+                    Impresión automática
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 block">
+                    Imprimir la factura automáticamente al cobrar en el POS
+                  </span>
+                </div>
               </label>
 
               <div className="md:col-span-2">
@@ -382,6 +419,9 @@ export function SettingsPage() {
           printer={printer}
           testReceiptRef={testReceiptRef}
           previewConfig={previewConfig}
+          autoPrintEnabled={autoPrintSetting}
+          onToggleAutoPrint={() => toggleAutoPrintMutation.mutate(!autoPrintSetting)}
+          isSavingAutoPrint={toggleAutoPrintMutation.isPending}
         />
       )}
 
@@ -414,6 +454,9 @@ type PrinterTabProps = {
   printer: ReturnType<typeof usePrinter>
   testReceiptRef: React.RefObject<HTMLDivElement | null>
   previewConfig: ReceiptConfig
+  autoPrintEnabled?: boolean
+  onToggleAutoPrint?: () => void
+  isSavingAutoPrint?: boolean
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -431,7 +474,14 @@ const STATUS_LABELS: Record<string, string> = {
   printing:     '◌ Imprimiendo…',
 }
 
-function PrinterTab({ printer, testReceiptRef, previewConfig }: PrinterTabProps) {
+function PrinterTab({
+  printer,
+  testReceiptRef,
+  previewConfig,
+  autoPrintEnabled = true,
+  onToggleAutoPrint,
+  isSavingAutoPrint = false,
+}: PrinterTabProps) {
   const handleBrowserPrint = useReactToPrint({
     contentRef: testReceiptRef,
     documentTitle: 'Test-Impresion-POS',
@@ -470,6 +520,41 @@ function PrinterTab({ printer, testReceiptRef, previewConfig }: PrinterTabProps)
 
   return (
     <div className="space-y-6">
+      {/* ── Automatización e Impresión Automática ── */}
+      <SectionCard
+        title="Automatización de Impresión"
+        description="Configura si el sistema debe imprimir la factura inmediatamente al cobrar."
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
+          <div className="space-y-0.5">
+            <span className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100">
+              ⚡ Imprimir ticket automáticamente al cobrar
+            </span>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Al confirmar y guardar una venta en el módulo POS, se enviará el ticket directamente a la impresora sin requerir confirmación manual.
+            </p>
+          </div>
+          {onToggleAutoPrint && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={autoPrintEnabled}
+              disabled={isSavingAutoPrint}
+              onClick={onToggleAutoPrint}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
+                autoPrintEnabled ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  autoPrintEnabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          )}
+        </div>
+      </SectionCard>
+
       {/* ── Modo de impresión ── */}
       <SectionCard title="Modo de Impresión" description="Elige cómo se enviará la factura a la impresora.">
         <div className="grid gap-4 sm:grid-cols-2">

@@ -22,6 +22,8 @@ export type ReceiptConfig = {
   showLineTotal: boolean
   // Separadores
   separatorStyle: 'dashed' | 'solid' | 'double' | 'none'
+  // Impresión automática
+  autoPrint: boolean
 }
 
 export const RECEIPT_CONFIG_DEFAULTS: ReceiptConfig = {
@@ -40,6 +42,7 @@ export const RECEIPT_CONFIG_DEFAULTS: ReceiptConfig = {
   showUnitPrice: true,
   showLineTotal: true,
   separatorStyle: 'solid',
+  autoPrint: true,
 }
 
 const PADDING_H_MAP = { tight: '4mm', normal: '8mm', wide: '14mm' }
@@ -84,5 +87,6 @@ export function useReceiptConfig(): ReceiptConfig {
     showUnitPrice: get('receipt.showUnitPrice') === 'false' ? false : RECEIPT_CONFIG_DEFAULTS.showUnitPrice,
     showLineTotal: get('receipt.showLineTotal') === 'false' ? false : RECEIPT_CONFIG_DEFAULTS.showLineTotal,
     separatorStyle: (get('receipt.separatorStyle') as ReceiptConfig['separatorStyle']) ?? RECEIPT_CONFIG_DEFAULTS.separatorStyle,
+    autoPrint: (get('autoPrint') ?? get('receipt.autoPrint')) !== 'false',
   }
 }
