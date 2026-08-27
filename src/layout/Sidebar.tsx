@@ -345,19 +345,75 @@ export function Sidebar({
           </div>
         )}
 
-        {/* Sección: Ajustes & Dock Toolbar */}
-        <div className="flex flex-col items-center w-full">
-          {!isCollapsed ? (
-            <div className="flex w-full items-center justify-between px-2 pb-1.5 text-[11px] font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
-              <span>Ajustes: {settingItems.length + 3}</span>
-              <GearIcon className="h-3 w-3 opacity-60" />
-            </div>
-          ) : (
-            <div className="pb-1 text-center text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-              <span>Ajustes</span>
-            </div>
-          )}
+        {/* Sección: Ajustes & Sistema (Contabilidad, Reportes, Suscripción, Configuración) */}
+        {settingItems.length > 0 && (
+          <div className="flex flex-col items-center w-full">
+            {!isCollapsed ? (
+              <div className="flex w-full items-center justify-between px-2 pb-1.5 text-[11px] font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
+                <span>Ajustes: {settingItems.length}</span>
+                <GearIcon className="h-3 w-3 opacity-60" />
+              </div>
+            ) : (
+              <div className="pb-1 text-center text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                <span>Ajustes: {settingItems.length}</span>
+              </div>
+            )}
 
+            <div
+              className={`border border-slate-100 bg-white/90 shadow-sm dark:border-slate-800/80 dark:bg-slate-800/60 ${
+                isCollapsed
+                  ? 'w-11 rounded-2xl p-1 flex flex-col items-center gap-1'
+                  : 'w-full rounded-2xl p-1.5 space-y-0.5'
+              }`}
+            >
+              {settingItems.map((item) => {
+                const isActive = location.pathname.startsWith(item.path)
+                const Icon = item.icon
+                const badge = item.badgeKey ? badgeValues[item.badgeKey] : undefined
+
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={handleItemClick}
+                    title={item.label}
+                    className={`group flex items-center ${
+                      isCollapsed
+                        ? 'h-9 w-9 justify-center rounded-xl'
+                        : 'h-8.5 w-full justify-between px-2.5 rounded-xl'
+                    } text-xs font-medium transition-all ${
+                      isActive
+                        ? 'bg-blue-50 text-[#2b66ff] dark:bg-blue-500/15 dark:text-blue-300 font-semibold'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'
+                    }`}
+                  >
+                    <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5'} min-w-0`}>
+                      <div
+                        className={`flex ${isCollapsed ? 'h-7 w-7' : 'h-6 w-6'} shrink-0 items-center justify-center rounded-lg ${
+                          isActive
+                            ? 'bg-[#2b66ff] text-white'
+                            : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300 group-hover:bg-blue-50 group-hover:text-[#2b66ff] dark:group-hover:bg-blue-500/20'
+                        } transition`}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                      </div>
+                      {!isCollapsed && <span className="truncate text-xs">{item.label}</span>}
+                    </div>
+
+                    {!isCollapsed && badge ? (
+                      <span className="ml-2 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-600 dark:bg-rose-500/20 dark:text-rose-300">
+                        {badge}
+                      </span>
+                    ) : null}
+                  </NavLink>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Barra Dock de Acciones Rápidas (WhatsApp, Modo Oscuro, Cerrar Sesión) */}
+        <div className="flex flex-col items-center w-full pt-1">
           <div
             className={`border border-slate-100 bg-white/90 shadow-sm dark:border-slate-800/80 dark:bg-slate-800/60 ${
               isCollapsed
@@ -365,31 +421,10 @@ export function Sidebar({
                 : 'w-full rounded-2xl p-1.5 flex items-center justify-around'
             }`}
           >
-            {/* Quick Links de Configuración / Reportes si existen */}
-            {settingItems.slice(0, 2).map((item) => {
-              const isActive = location.pathname.startsWith(item.path)
-              const Icon = item.icon
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  onClick={handleItemClick}
-                  title={item.label}
-                  className={`flex ${isCollapsed ? 'h-8 w-8' : 'h-8 w-8'} items-center justify-center rounded-xl transition ${
-                    isActive
-                      ? 'bg-blue-50 text-[#2b66ff] dark:bg-blue-500/20 dark:text-blue-300'
-                      : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-white'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                </NavLink>
-              )
-            })}
-
             {/* Botón Soporte WhatsApp */}
             <button
               type="button"
-              title="Soporte Técnico"
+              title="Soporte Técnico WhatsApp"
               onClick={() => openSupportWhatsApp(user?.storeName, user?.fullName, 'consulta técnica')}
               className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/20 dark:hover:text-emerald-400 transition"
             >
