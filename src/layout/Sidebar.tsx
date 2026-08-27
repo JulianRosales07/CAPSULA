@@ -5,7 +5,6 @@ import { useUiStore, type AuthUser } from '../store/ui-store'
 import { openSupportWhatsApp } from '../shared/utils/supportContact'
 import {
   ChevronLeftIcon,
-  ChevronRightIcon,
   GearIcon,
   GridIcon,
   LogOutIcon,
@@ -143,48 +142,58 @@ export function Sidebar({
   return (
     <aside
       className={`relative flex flex-col select-none transition-all duration-300 ease-in-out ${
-        isCollapsed ? 'w-[74px]' : 'w-[268px]'
-      } h-full rounded-[28px] border border-white/70 bg-white/75 p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.06)] backdrop-blur-2xl dark:border-slate-800/80 dark:bg-slate-900/80 dark:shadow-[0_20px_50px_rgba(0,0,0,0.35)]`}
+        isCollapsed ? 'w-[72px] px-2.5 py-3.5' : 'w-[268px] p-3.5'
+      } h-full rounded-[28px] border border-white/70 bg-white/75 shadow-[0_20px_50px_rgba(0,0,0,0.06)] backdrop-blur-2xl dark:border-slate-800/80 dark:bg-slate-900/80 dark:shadow-[0_20px_50px_rgba(0,0,0,0.35)]`}
     >
-      {/* 1. Header: macOS Traffic Lights & Mobile Close */}
-      <div className="flex items-center justify-between px-1.5 pt-1 pb-2">
-        <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f56] shadow-sm shadow-red-500/20" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e] shadow-sm shadow-amber-500/20" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#27c93f] shadow-sm shadow-emerald-500/20" />
+      {/* 1. Header: macOS Traffic Lights & Expand/Collapse Toggle */}
+      {isCollapsed ? (
+        <div
+          onClick={toggleSidebarCollapsed}
+          title="Expandir menú"
+          className="group flex cursor-pointer flex-col items-center justify-center pt-1 pb-2 transition"
+        >
+          <div className="flex items-center gap-1.5 py-1">
+            <span className="h-2 w-2 rounded-full bg-[#ff5f56] shadow-sm shadow-red-500/20" />
+            <span className="h-2 w-2 rounded-full bg-[#ffbd2e] shadow-sm shadow-amber-500/20" />
+            <span className="h-2 w-2 rounded-full bg-[#27c93f] shadow-sm shadow-emerald-500/20" />
+          </div>
         </div>
+      ) : (
+        <div className="flex items-center justify-between px-1 pt-1 pb-2">
+          <div className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f56] shadow-sm shadow-red-500/20" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e] shadow-sm shadow-amber-500/20" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#27c93f] shadow-sm shadow-emerald-500/20" />
+          </div>
 
-        {isMobile ? (
-          <button
-            type="button"
-            onClick={onCloseMobile}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 transition"
-            title="Cerrar menú"
-          >
-            <XIcon className="h-4 w-4" />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={toggleSidebarCollapsed}
-            title={isCollapsed ? 'Expandir menú' : 'Colapsar menú'}
-            className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition"
-          >
-            {isCollapsed ? (
-              <ChevronRightIcon className="h-3.5 w-3.5" />
-            ) : (
+          {isMobile ? (
+            <button
+              type="button"
+              onClick={onCloseMobile}
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 transition"
+              title="Cerrar menú"
+            >
+              <XIcon className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={toggleSidebarCollapsed}
+              title="Colapsar menú"
+              className="flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition"
+            >
               <ChevronLeftIcon className="h-3.5 w-3.5" />
-            )}
-          </button>
-        )}
-      </div>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 2. User Profile Header */}
-      <div className={`mt-2 mb-3 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-1'}`}>
+      <div className={`mt-1.5 mb-3 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-1'}`}>
         <div
-          className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-500 p-[2px] shadow-sm cursor-pointer"
-          title={`${displayName} (${user?.role || ''})`}
-          onClick={() => !isMobile && isCollapsed && toggleSidebarCollapsed()}
+          className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-500 p-[2px] shadow-sm cursor-pointer hover:scale-105 transition-transform"
+          title={`${displayName} (${user?.role || ''})${isCollapsed ? ' - Clic para expandir' : ''}`}
+          onClick={() => isCollapsed && toggleSidebarCollapsed()}
         >
           <div className="flex h-full w-full items-center justify-center rounded-full bg-white text-xs font-bold text-slate-800 dark:bg-slate-900 dark:text-white">
             {initials}
@@ -205,23 +214,23 @@ export function Sidebar({
         )}
       </div>
 
-      {/* 3. Contenedor con Scroll Suave */}
-      <div className="flex-1 space-y-4 overflow-y-auto overflow-x-hidden pr-0.5 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+      {/* 3. Contenedor con Scroll Limpio (Sin barra de scroll visible) */}
+      <div className="flex-1 space-y-4 overflow-y-auto overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {/* Sección: Menu Principal */}
         {primaryItems.length > 0 && (
-          <div>
+          <div className="flex flex-col items-center w-full">
             {!isCollapsed ? (
-              <div className="flex items-center justify-between px-2 pb-1.5 text-[11px] font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
+              <div className="flex w-full items-center justify-between px-2 pb-1.5 text-[11px] font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
                 <span>Menu: {primaryItems.length}</span>
                 <SlidersIcon className="h-3 w-3 opacity-60" />
               </div>
             ) : (
               <div className="pb-1 text-center text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-                <span>{primaryItems.length}</span>
+                <span>Menu: {primaryItems.length}</span>
               </div>
             )}
 
-            <div className="space-y-1">
+            <div className={`space-y-1 w-full ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
               {primaryItems.map((item) => {
                 const isActive = location.pathname.startsWith(item.path)
                 const Icon = item.icon
@@ -235,7 +244,7 @@ export function Sidebar({
                     title={item.label}
                     className={`group relative flex items-center ${
                       isCollapsed
-                        ? 'h-10 w-10 justify-center mx-auto rounded-xl'
+                        ? 'h-11 w-11 justify-center rounded-2xl'
                         : 'h-10 w-full justify-between px-3 rounded-2xl'
                     } transition-all duration-200 ${
                       isActive
@@ -243,9 +252,9 @@ export function Sidebar({
                         : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-white font-medium'
                     }`}
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} min-w-0`}>
                       <Icon
-                        className={`h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 ${
+                        className={`h-5 w-5 shrink-0 transition-transform group-hover:scale-110 ${
                           isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400'
                         }`}
                       />
@@ -263,7 +272,7 @@ export function Sidebar({
                     ) : null}
 
                     {isCollapsed && badge ? (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white shadow-sm">
+                      <span className="absolute 0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white shadow-sm">
                         {badge}
                       </span>
                     ) : null}
@@ -276,21 +285,23 @@ export function Sidebar({
 
         {/* Sección: Servicios / Operación (Tarjeta interna) */}
         {serviceItems.length > 0 && (
-          <div>
+          <div className="flex flex-col items-center w-full">
             {!isCollapsed ? (
-              <div className="flex items-center justify-between px-2 pb-1.5 text-[11px] font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
+              <div className="flex w-full items-center justify-between px-2 pb-1.5 text-[11px] font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
                 <span>Servicios: {serviceItems.length}</span>
                 <GridIcon className="h-3 w-3 opacity-60" />
               </div>
             ) : (
               <div className="pb-1 text-center text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-                <span>{serviceItems.length}</span>
+                <span>Servicios: {serviceItems.length}</span>
               </div>
             )}
 
             <div
-              className={`rounded-2xl border border-slate-100 bg-white/90 p-1.5 shadow-sm dark:border-slate-800/80 dark:bg-slate-800/60 ${
-                isCollapsed ? 'space-y-1' : 'space-y-0.5'
+              className={`border border-slate-100 bg-white/90 shadow-sm dark:border-slate-800/80 dark:bg-slate-800/60 ${
+                isCollapsed
+                  ? 'w-11 rounded-2xl p-1 flex flex-col items-center gap-1'
+                  : 'w-full rounded-2xl p-1.5 space-y-0.5'
               }`}
             >
               {serviceItems.map((item) => {
@@ -306,7 +317,7 @@ export function Sidebar({
                     title={item.label}
                     className={`group flex items-center ${
                       isCollapsed
-                        ? 'h-9 w-9 justify-center mx-auto rounded-xl'
+                        ? 'h-9 w-9 justify-center rounded-xl'
                         : 'h-8.5 w-full justify-between px-2.5 rounded-xl'
                     } text-xs font-medium transition-all ${
                       isActive
@@ -314,9 +325,9 @@ export function Sidebar({
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5'} min-w-0`}>
                       <div
-                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg ${
+                        className={`flex ${isCollapsed ? 'h-7 w-7' : 'h-6 w-6'} shrink-0 items-center justify-center rounded-lg ${
                           isActive
                             ? 'bg-[#2b66ff] text-white'
                             : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300 group-hover:bg-blue-50 group-hover:text-[#2b66ff] dark:group-hover:bg-blue-500/20'
@@ -340,21 +351,23 @@ export function Sidebar({
         )}
 
         {/* Sección: Ajustes & Dock Toolbar */}
-        <div>
+        <div className="flex flex-col items-center w-full">
           {!isCollapsed ? (
-            <div className="flex items-center justify-between px-2 pb-1.5 text-[11px] font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
+            <div className="flex w-full items-center justify-between px-2 pb-1.5 text-[11px] font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
               <span>Ajustes: {settingItems.length + 3}</span>
               <GearIcon className="h-3 w-3 opacity-60" />
             </div>
           ) : (
             <div className="pb-1 text-center text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-              <span>⚙️</span>
+              <span>Ajustes</span>
             </div>
           )}
 
           <div
-            className={`rounded-2xl border border-slate-100 bg-white/90 p-1.5 shadow-sm dark:border-slate-800/80 dark:bg-slate-800/60 ${
-              isCollapsed ? 'flex flex-col items-center space-y-1' : 'flex items-center justify-around'
+            className={`border border-slate-100 bg-white/90 shadow-sm dark:border-slate-800/80 dark:bg-slate-800/60 ${
+              isCollapsed
+                ? 'w-11 rounded-2xl p-1 flex flex-col items-center gap-1'
+                : 'w-full rounded-2xl p-1.5 flex items-center justify-around'
             }`}
           >
             {/* Quick Links de Configuración / Reportes si existen */}
@@ -367,7 +380,7 @@ export function Sidebar({
                   to={item.path}
                   onClick={handleItemClick}
                   title={item.label}
-                  className={`flex h-8 w-8 items-center justify-center rounded-xl transition ${
+                  className={`flex ${isCollapsed ? 'h-8 w-8' : 'h-8 w-8'} items-center justify-center rounded-xl transition ${
                     isActive
                       ? 'bg-blue-50 text-[#2b66ff] dark:bg-blue-500/20 dark:text-blue-300'
                       : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-white'
@@ -412,14 +425,14 @@ export function Sidebar({
       </div>
 
       {/* 4. Bottom Action Card / Floating Action Button */}
-      <div className="mt-3 pt-2">
+      <div className="mt-3 pt-1 flex justify-center w-full">
         {!isCollapsed ? (
           <div
             onClick={() => {
               navigate(primaryAction.path)
               handleItemClick()
             }}
-            className="group relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-slate-100 bg-white/90 p-3 text-center shadow-sm transition-all hover:border-blue-300 hover:shadow-md dark:border-slate-800/80 dark:bg-slate-800/80 dark:hover:border-blue-600"
+            className="group relative flex w-full cursor-pointer flex-col items-center justify-center rounded-2xl border border-slate-100 bg-white/90 p-3 text-center shadow-sm transition-all hover:border-blue-300 hover:shadow-md dark:border-slate-800/80 dark:bg-slate-800/80 dark:hover:border-blue-600"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2b66ff] text-white shadow-md shadow-blue-500/30 transition-transform group-hover:scale-110">
               <PlusIcon className="h-4.5 w-4.5 stroke-[2.5]" />
@@ -439,7 +452,7 @@ export function Sidebar({
               handleItemClick()
             }}
             title={primaryAction.title}
-            className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#2b66ff] text-white shadow-lg shadow-blue-500/35 transition-transform hover:scale-110 active:scale-95"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#2b66ff] text-white shadow-lg shadow-blue-500/35 transition-transform hover:scale-110 active:scale-95"
           >
             <PlusIcon className="h-5 w-5 stroke-[2.5]" />
           </button>
