@@ -261,7 +261,6 @@ export function Sidebar({
           {/* Scrollable Navigation Sections with Minimalist Hierarchy */}
           <div className="flex-1 space-y-4 overflow-y-auto overflow-x-hidden pr-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {groups.map((group) => {
-              const isGroupActive = group.title === activeGroupTitle
               const isGroupCollapsed = collapsedGroups[group.title] ?? false
               const hasMultipleItems = group.items.length > 1
 
