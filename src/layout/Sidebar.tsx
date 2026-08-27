@@ -100,15 +100,6 @@ export function Sidebar({
     }
   }, [isSuperAdmin])
 
-  // Identificar el grupo activo
-  const activeGroupTitle = useMemo(() => {
-    for (const group of groups) {
-      if (group.items.some((item) => location.pathname.startsWith(item.path))) {
-        return group.title
-      }
-    }
-    return groups[0]?.title || ''
-  }, [groups, location.pathname])
 
   return (
     <aside
