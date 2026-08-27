@@ -57,7 +57,7 @@ export function DataTable<TData>({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400"
+                    className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 whitespace-nowrap"
                   >
                     {header.isPlaceholder ? null : (
                       <button
@@ -79,7 +79,7 @@ export function DataTable<TData>({
             {rows.map((row) => (
               <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                  <td key={cell.id} className="px-4 py-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}

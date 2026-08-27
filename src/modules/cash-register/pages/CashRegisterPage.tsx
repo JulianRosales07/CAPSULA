@@ -4,6 +4,9 @@ import type { ColumnDef } from '@tanstack/react-table'
 import toast from 'react-hot-toast'
 import { DataTable } from '../../../components/ui/DataTable'
 import { SectionCard } from '../../../components/ui/SectionCard'
+import { CashIcon } from '../../../components/icons'
+import { useUiStore } from '../../../store/ui-store'
+import { openSupportWhatsApp } from '../../../shared/utils/supportContact'
 import {
   closeCashRegister,
   getCurrentCashRegister,
@@ -34,6 +37,7 @@ function formatDateTime(dateStr: string) {
 
 export function CashRegisterPage() {
   const queryClient = useQueryClient()
+  const user = useUiStore((state) => state.user)
   const [openingAmount, setOpeningAmount] = useState('')
   const [openingNote, setOpeningNote] = useState('')
 
@@ -608,37 +612,89 @@ export function CashRegisterPage() {
             </div>
           </div>
         ) : (
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <h3 className="text-base font-semibold text-slate-900 dark:text-white">No hay caja abierta</h3>
-            <p className="mt-1 text-xs text-slate-400">
-              Registra el monto de base con el que inicias el turno para habilitar las ventas en el punto de venta.
-            </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_2fr_auto]">
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={openingAmount}
-                onChange={(e) => setOpeningAmount(e.target.value)}
-                placeholder="Monto de apertura / Base ($)"
-                className="rounded-lg border border-slate-300 px-3.5 py-2 text-sm font-semibold shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              />
-              <input
-                type="text"
-                value={openingNote}
-                onChange={(e) => setOpeningNote(e.target.value)}
-                placeholder="Nota de apertura (opcional)"
-                className="rounded-lg border border-slate-300 px-3.5 py-2 text-sm shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              />
-              <button
-                type="button"
-                onClick={handleOpen}
-                disabled={openMutation.isPending}
-                className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
-              >
-                {openMutation.isPending ? 'Abriendo...' : '🔓 Abrir caja'}
-              </button>
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                <CashIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">No hay caja abierta</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Registra el monto de base con el que inicias el turno para habilitar las ventas en el punto de venta.
+                </p>
+              </div>
             </div>
+
+            {user?.isTrialExpired ? (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50/70 p-4 text-xs text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
+                <p className="font-bold flex items-center gap-1.5 text-sm">
+                  <span>⚠️</span> Modo Solo Lectura Activado
+                </p>
+                <p className="mt-1 text-slate-600 dark:text-slate-300">
+                  El período de prueba de tu establecimiento ha finalizado. Para abrir nuevas cajas y registrar ventas, por favor contacta a soporte o activa tu plan.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => openSupportWhatsApp(user?.storeName, user?.fullName, 'activar suscripción para abrir caja')}
+                  className="mt-3 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-red-700 transition"
+                >
+                  <span>💬 Contactar a Soporte por WhatsApp</span>
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  handleOpen()
+                }}
+                className="mt-5 space-y-4"
+              >
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Monto de apertura / Base ($) <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm font-bold text-slate-400">$</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        required
+                        value={openingAmount}
+                        onChange={(e) => setOpeningAmount(e.target.value)}
+                        placeholder="Ej: 50000"
+                        className="w-full rounded-xl border border-slate-300 pl-7 pr-3.5 py-2.5 text-sm font-bold text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-400/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Nota de apertura <span className="text-slate-400 font-normal">(opcional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={openingNote}
+                      onChange={(e) => setOpeningNote(e.target.value)}
+                      placeholder="Ej: Turno mañana"
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-400/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={openMutation.isPending}
+                    className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-blue-700 disabled:opacity-60"
+                  >
+                    <span>🔓</span>
+                    <span>{openMutation.isPending ? 'Abriendo caja...' : 'Abrir caja'}</span>
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         )}
       </SectionCard>

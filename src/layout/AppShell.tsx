@@ -202,30 +202,30 @@ export function AppShell() {
       <div className="relative flex flex-1 min-w-0 flex-col overflow-hidden rounded-[26px] border border-white/80 bg-white/90 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/90 backdrop-blur-xl">
         {/* Banner de prueba vencida o próxima a vencer */}
         {!isSuperAdmin && user?.isTrialExpired ? (
-          <div className="border-b border-red-200 bg-red-50 px-4 py-2.5 text-red-900 dark:border-red-900/50 dark:bg-red-950/60 dark:text-red-200 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm z-30 shrink-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-base shrink-0">⚠️</span>
-              <span className="leading-tight">
-                <strong>Período de prueba finalizado:</strong> La aplicación está en <u>modo solo lectura</u> (no es posible registrar ventas ni compras).
+          <div className="border-b border-red-200 bg-red-50/95 px-3.5 py-2 text-red-900 dark:border-red-900/50 dark:bg-red-950/70 dark:text-red-200 flex flex-wrap items-center justify-between gap-2 text-xs z-30 shrink-0">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span className="text-sm shrink-0">⚠️</span>
+              <span className="leading-snug">
+                <strong>Prueba finalizada:</strong> La droguería está en <u>modo solo lectura</u>.
               </span>
             </div>
             <button
               type="button"
               onClick={() => openSupportWhatsApp(user?.storeName, user?.fullName, 'reactivar el sistema y plan')}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-red-700 transition shrink-0"
+              className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-xs hover:bg-red-700 transition shrink-0"
             >
-              <span>💬 Contactar a Soporte</span>
+              <span>💬 Soporte</span>
             </button>
           </div>
         ) : !isSuperAdmin && user?.subscriptionStatus === 'TRIAL' && (user?.daysRemaining ?? 99) <= 3 ? (
-          <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/50 dark:text-amber-200 flex flex-wrap items-center justify-between gap-2 text-xs z-30 shrink-0">
+          <div className="border-b border-amber-200 bg-amber-50 px-3.5 py-2 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/50 dark:text-amber-200 flex flex-wrap items-center justify-between gap-2 text-xs z-30 shrink-0">
             <span>
               ⏳ Te quedan <strong>{user?.daysRemaining} {user?.daysRemaining === 1 ? 'día' : 'días'}</strong> de prueba gratuita.
             </span>
             <button
               type="button"
               onClick={() => openSupportWhatsApp(user?.storeName, user?.fullName, 'activar el plan')}
-              className="font-semibold underline hover:text-amber-700 dark:hover:text-amber-300"
+              className="font-semibold underline hover:text-amber-700 dark:hover:text-amber-300 text-xs"
             >
               Contactar Soporte →
             </button>
@@ -234,42 +234,44 @@ export function AppShell() {
 
         {/* Cabecera superior */}
         {!isPos ? (
-          <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/80 backdrop-blur-md md:px-6 shrink-0">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
+          <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/80 px-3.5 py-2.5 dark:border-slate-800 dark:bg-slate-900/80 backdrop-blur-md md:px-6 shrink-0">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <button
                   type="button"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 lg:hidden transition"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 lg:hidden transition"
                   onClick={toggleSidebar}
                   title="Abrir menú"
                 >
                   <MenuIcon className="h-5 w-5" />
                 </button>
-                <div className="flex items-center gap-2.5">
-                  <img src={CapsulaLogos} alt="Cápsula" className="h-7 w-7 object-contain lg:hidden" />
-                  <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-800 dark:text-white">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100/90 p-1 shadow-xs dark:bg-slate-800 lg:hidden">
+                    <img src={CapsulaLogos} alt="Cápsula" className="h-full w-full object-contain" />
+                  </div>
+                  <h2 className="truncate text-base sm:text-lg font-bold tracking-tight text-slate-800 dark:text-white">
                     {activeLabel}
                   </h2>
                 </div>
               </div>
 
               {/* Badge de suscripción y tienda */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <span className="hidden sm:inline-block text-xs font-medium text-slate-400 dark:text-slate-500">
                   {user?.storeName || (isSuperAdmin ? 'Super Administrador' : storeTerm)}
                 </span>
                 {!isSuperAdmin && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     {user?.isTrialExpired ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 dark:bg-red-500/20 dark:text-red-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] sm:text-xs font-semibold text-red-800 dark:bg-red-500/20 dark:text-red-300 whitespace-nowrap shrink-0">
                         🔴 Modo Solo Lectura
                       </span>
                     ) : user?.subscriptionStatus === 'TRIAL' ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-[#2b66ff] dark:bg-blue-500/10 dark:text-blue-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-[#2b66ff] dark:bg-blue-500/10 dark:text-blue-300 whitespace-nowrap shrink-0">
                         ⏳ Prueba ({user.daysRemaining ?? 0}d)
                       </span>
                     ) : user?.subscriptionStatus === 'ACTIVE' ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300 whitespace-nowrap shrink-0">
                         💎 Plan Activo
                       </span>
                     ) : null}
