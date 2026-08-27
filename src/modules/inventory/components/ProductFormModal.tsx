@@ -49,7 +49,9 @@ export function ProductFormModal({ open, product, onClose }: ProductFormModalPro
   const [showNewCategory, setShowNewCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
 
-  const { register, handleSubmit, reset, formState, setValue } = useForm<ProductFormValues>({
+  const [hasPresentations, setHasPresentations] = useState(false)
+
+  const { register, handleSubmit, reset, formState, setValue, watch } = useForm<ProductFormValues>({
     defaultValues: {
       sku: '',
       barcode: '',
@@ -64,6 +66,9 @@ export function ProductFormModal({ open, product, onClose }: ProductFormModalPro
       isActive: true,
     },
   })
+
+  const watchedCost = watch('cost')
+  const watchedPrice = watch('price')
 
   const categoriesQuery = useQuery({
     queryKey: ['categories'],
@@ -88,6 +93,7 @@ export function ProductFormModal({ open, product, onClose }: ProductFormModalPro
         minStock: product.minStock,
         isActive: product.isActive,
       })
+      setHasPresentations(false)
     } else {
       reset({
         sku: '',
@@ -102,6 +108,7 @@ export function ProductFormModal({ open, product, onClose }: ProductFormModalPro
         minStock: 0,
         isActive: true,
       })
+      setHasPresentations(false)
     }
     setShowNewCategory(false)
     setNewCategoryName('')
@@ -197,6 +204,12 @@ export function ProductFormModal({ open, product, onClose }: ProductFormModalPro
     queryFn: () => listProductUnits(product!.id),
     enabled: open && isEditing && Boolean(product),
   })
+
+  useEffect(() => {
+    if (isEditing && unitsQuery.data && unitsQuery.data.length > 0) {
+      setHasPresentations(true)
+    }
+  }, [isEditing, unitsQuery.data])
 
   const [draftUnits, setDraftUnits] = useState<DraftUnit[]>([])
   const [newUnit, setNewUnit] = useState({ name: '', factor: '', cost: '', price: '', barcode: '' })
@@ -480,196 +493,219 @@ export function ProductFormModal({ open, product, onClose }: ProductFormModalPro
           </div>
 
           <div className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-800">
-            <h3 className="text-base font-semibold text-slate-900 dark:text-white">
-              Presentaciones de venta
-            </h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              La "Unidad" siempre existe con el costo y precio base del producto. Agrega otras
-              presentaciones como "Caja x10" o "Caja completa", cada una con su propio costo,
-              precio de venta y código de barras.
-            </p>
+            {/* Checkbox de Activación Opcional de Presentaciones */}
+            <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 sm:p-4 cursor-pointer hover:bg-slate-100/60 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:bg-slate-800 transition-colors">
+              <input
+                type="checkbox"
+                checked={hasPresentations}
+                onChange={(e) => setHasPresentations(e.target.checked)}
+                className="mt-0.5 size-4.5 rounded text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700"
+              />
+              <div className="flex-1 min-w-0">
+                <span className="block text-sm font-bold text-slate-800 dark:text-slate-100">
+                  ¿Este producto tiene múltiples presentaciones de venta? (Caja, Blíster, Display, etc.)
+                </span>
+                <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
+                  Activa esta casilla únicamente si vendes este producto en empaques o presentaciones adicionales con precios o códigos propios.
+                </span>
+              </div>
+            </label>
 
-            <div className="mt-3 space-y-2.5">
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-800/60">
+            {hasPresentations && (
+              <div className="mt-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs dark:border-slate-700 dark:bg-slate-900">
                 <div>
-                  <p className="font-medium text-slate-800 dark:text-slate-100">Unidad (base)</p>
-                  <p className="mt-0.5 text-xs text-slate-400">Presentación individual del producto</p>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Configurar presentaciones
+                  </h3>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    La "Unidad" siempre existe con el costo y precio base configurados arriba. Agrega otras presentaciones como "Caja x10" o "Caja completa".
+                  </p>
                 </div>
-                <div className="flex items-center gap-5">
-                  <div className="text-right text-sm">
-                    <p className="text-xs text-slate-400">Costo</p>
-                    <p className="font-medium text-slate-700 dark:text-slate-200">
-                      {money(Number(product?.cost ?? 0))}
-                    </p>
+
+                <div className="space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-800/60">
+                    <div>
+                      <p className="font-semibold text-slate-800 dark:text-slate-100">Unidad (base)</p>
+                      <p className="mt-0.5 text-xs text-slate-400">Presentación individual del producto</p>
+                    </div>
+                    <div className="flex items-center gap-5">
+                      <div className="text-right text-sm">
+                        <p className="text-xs text-slate-400">Costo</p>
+                        <p className="font-semibold text-slate-700 dark:text-slate-200">
+                          {money(Number(watchedCost || product?.cost || 0))}
+                        </p>
+                      </div>
+                      <div className="text-right text-sm">
+                        <p className="text-xs text-slate-400">Precio</p>
+                        <p className="font-semibold text-slate-700 dark:text-slate-200">
+                          {money(Number(watchedPrice || product?.price || 0))}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-right text-sm">
-                    <p className="text-xs text-slate-400">Precio</p>
-                    <p className="font-medium text-slate-700 dark:text-slate-200">
-                      {money(Number(product?.price ?? 0))}
-                    </p>
+
+                  {isEditing ? (
+                    <>
+                      {unitsQuery.isLoading && (
+                        <p className="text-xs text-slate-400">Cargando presentaciones…</p>
+                      )}
+                      {(unitsQuery.data ?? []).map((unit) => (
+                        <div
+                          key={unit.id}
+                          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm dark:border-slate-700"
+                        >
+                          <div>
+                            <p className="font-semibold text-slate-800 dark:text-slate-100">{unit.name}</p>
+                            <p className="mt-0.5 text-xs text-slate-400">
+                              Contiene {unit.factor} unidades{unit.barcode ? ` · Código ${unit.barcode}` : ''}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-5">
+                            <div className="text-right text-sm">
+                              <p className="text-xs text-slate-400">Costo</p>
+                              <p className="font-semibold text-slate-700 dark:text-slate-200">{money(unit.cost)}</p>
+                            </div>
+                            <div className="text-right text-sm">
+                              <p className="text-xs text-slate-400">Precio</p>
+                              <p className="font-semibold text-slate-700 dark:text-slate-200">{money(unit.price)}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => deleteUnitMutation.mutate(unit.id)}
+                              className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-500/10 transition"
+                              title="Eliminar presentación"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      {draftUnits.length === 0 && (
+                        <p className="text-xs text-slate-400 italic">
+                          Aún no has agregado presentaciones adicionales. Se guardarán al crear el producto.
+                        </p>
+                      )}
+                      {draftUnits.map((unit, index) => (
+                        <div
+                          key={index}
+                          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm dark:border-slate-700"
+                        >
+                          <div>
+                            <p className="font-semibold text-slate-800 dark:text-slate-100">{unit.name}</p>
+                            <p className="mt-0.5 text-xs text-slate-400">
+                              Contiene {unit.factor} unidades{unit.barcode ? ` · Código ${unit.barcode}` : ''}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-5">
+                            <div className="text-right text-sm">
+                              <p className="text-xs text-slate-400">Costo</p>
+                              <p className="font-semibold text-slate-700 dark:text-slate-200">{money(unit.cost)}</p>
+                            </div>
+                            <div className="text-right text-sm">
+                              <p className="text-xs text-slate-400">Precio</p>
+                              <p className="font-semibold text-slate-700 dark:text-slate-200">{money(unit.price)}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeDraftUnit(index)}
+                              className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-500/10 transition"
+                              title="Quitar presentación"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+
+                {/* Formulario para agregar nueva presentación */}
+                <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-4 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40">
+                  <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    + Agregar nueva presentación
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Nombre
+                      </span>
+                      <input
+                        placeholder="Ej. Caja x10"
+                        value={newUnit.name}
+                        onChange={(e) => setNewUnit((u) => ({ ...u, name: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Unidades que contiene
+                      </span>
+                      <input
+                        type="number"
+                        min="2"
+                        placeholder="Ej. 10"
+                        value={newUnit.factor}
+                        onChange={(e) => setNewUnit((u) => ({ ...u, factor: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Costo de la presentación
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="$ 0"
+                        value={newUnit.cost}
+                        onChange={(e) => setNewUnit((u) => ({ ...u, cost: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Precio de venta
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="$ 0"
+                        value={newUnit.price}
+                        onChange={(e) => setNewUnit((u) => ({ ...u, price: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </label>
+                    <label className="block sm:col-span-2 lg:col-span-3">
+                      <span className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Código de barras (opcional)
+                      </span>
+                      <input
+                        placeholder="Código propio de esta presentación"
+                        value={newUnit.barcode}
+                        onChange={(e) => setNewUnit((u) => ({ ...u, barcode: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </label>
+                    <div className="flex items-end sm:col-span-2 lg:col-span-1">
+                      <button
+                        type="button"
+                        onClick={handleAddUnit}
+                        disabled={addUnitMutation.isPending}
+                        className="w-full rounded-lg bg-slate-900 px-3 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60 dark:bg-white dark:text-slate-900"
+                      >
+                        + Agregar
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-
-              {isEditing ? (
-                <>
-                  {unitsQuery.isLoading && (
-                    <p className="text-xs text-slate-400">Cargando presentaciones…</p>
-                  )}
-                  {(unitsQuery.data ?? []).map((unit) => (
-                    <div
-                      key={unit.id}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 px-4 py-3 text-sm dark:border-slate-700"
-                    >
-                      <div>
-                        <p className="font-medium text-slate-800 dark:text-slate-100">{unit.name}</p>
-                        <p className="mt-0.5 text-xs text-slate-400">
-                          Contiene {unit.factor} unidades{unit.barcode ? ` · Código ${unit.barcode}` : ''}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-5">
-                        <div className="text-right text-sm">
-                          <p className="text-xs text-slate-400">Costo</p>
-                          <p className="font-medium text-slate-700 dark:text-slate-200">{money(unit.cost)}</p>
-                        </div>
-                        <div className="text-right text-sm">
-                          <p className="text-xs text-slate-400">Precio</p>
-                          <p className="font-medium text-slate-700 dark:text-slate-200">{money(unit.price)}</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => deleteUnitMutation.mutate(unit.id)}
-                          className="rounded-md p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-500/10"
-                          title="Eliminar presentación"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <>
-                  {draftUnits.length === 0 && (
-                    <p className="text-xs text-slate-400">
-                      Aún no has agregado presentaciones adicionales. Se guardarán al crear el producto.
-                    </p>
-                  )}
-                  {draftUnits.map((unit, index) => (
-                    <div
-                      key={index}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 px-4 py-3 text-sm dark:border-slate-700"
-                    >
-                      <div>
-                        <p className="font-medium text-slate-800 dark:text-slate-100">{unit.name}</p>
-                        <p className="mt-0.5 text-xs text-slate-400">
-                          Contiene {unit.factor} unidades{unit.barcode ? ` · Código ${unit.barcode}` : ''}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-5">
-                        <div className="text-right text-sm">
-                          <p className="text-xs text-slate-400">Costo</p>
-                          <p className="font-medium text-slate-700 dark:text-slate-200">{money(unit.cost)}</p>
-                        </div>
-                        <div className="text-right text-sm">
-                          <p className="text-xs text-slate-400">Precio</p>
-                          <p className="font-medium text-slate-700 dark:text-slate-200">{money(unit.price)}</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeDraftUnit(index)}
-                          className="rounded-md p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-500/10"
-                          title="Quitar presentación"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-
-            <div className="mt-4 rounded-lg border border-dashed border-slate-300 p-4 dark:border-slate-700">
-              <p className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-200">
-                Agregar nueva presentación
-              </p>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
-                    Nombre
-                  </span>
-                  <input
-                    placeholder="Ej. Caja x10"
-                    value={newUnit.name}
-                    onChange={(e) => setNewUnit((u) => ({ ...u, name: e.target.value }))}
-                    className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
-                    Unidades que contiene
-                  </span>
-                  <input
-                    type="number"
-                    min="2"
-                    placeholder="Ej. 10"
-                    value={newUnit.factor}
-                    onChange={(e) => setNewUnit((u) => ({ ...u, factor: e.target.value }))}
-                    className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
-                    Costo de la presentación
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="$ 0"
-                    value={newUnit.cost}
-                    onChange={(e) => setNewUnit((u) => ({ ...u, cost: e.target.value }))}
-                    className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
-                    Precio de venta
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="$ 0"
-                    value={newUnit.price}
-                    onChange={(e) => setNewUnit((u) => ({ ...u, price: e.target.value }))}
-                    className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
-                </label>
-                <label className="block sm:col-span-2 lg:col-span-3">
-                  <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
-                    Código de barras (opcional)
-                  </span>
-                  <input
-                    placeholder="Código propio de esta presentación"
-                    value={newUnit.barcode}
-                    onChange={(e) => setNewUnit((u) => ({ ...u, barcode: e.target.value }))}
-                    className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
-                </label>
-                <div className="flex items-end sm:col-span-2 lg:col-span-1">
-                  <button
-                    type="button"
-                    onClick={handleAddUnit}
-                    disabled={addUnitMutation.isPending}
-                    className="w-full rounded-md bg-slate-900 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-60 dark:bg-white dark:text-slate-900"
-                  >
-                    + Agregar presentación
-                  </button>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
           </div>
