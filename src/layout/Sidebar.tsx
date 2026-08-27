@@ -72,15 +72,9 @@ export function Sidebar({
     }
   }
 
-  // Nombre e iniciales
+  // Nombre a mostrar
   const displayName = user?.fullName || 'Usuario'
   const firstName = displayName.split(' ')[0] || displayName
-  const initials = displayName
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
 
   // Dividir los grupos de navegación:
   // Grupo 1: General & Operación básica (Dashboard, POS, Reservas, Facturas, Caja, etc.)
