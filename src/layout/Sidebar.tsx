@@ -3,6 +3,7 @@ import { useMemo, type ReactElement } from 'react'
 import toast from 'react-hot-toast'
 import { useUiStore, type AuthUser } from '../store/ui-store'
 import { openSupportWhatsApp } from '../shared/utils/supportContact'
+import CapsulaLogos from '../assets/Capsulas.png'
 import {
   ChevronLeftIcon,
   GearIcon,
@@ -188,15 +189,15 @@ export function Sidebar({
         </div>
       )}
 
-      {/* 2. User Profile Header */}
+      {/* 2. User Profile Header with Cápsula Logo */}
       <div className={`mt-1.5 mb-3 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-1'}`}>
         <div
-          className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-500 p-[2px] shadow-sm cursor-pointer hover:scale-105 transition-transform"
-          title={`${displayName} (${user?.role || ''})${isCollapsed ? ' - Clic para expandir' : ''}`}
+          className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-500 p-[2px] shadow-sm cursor-pointer hover:scale-105 transition-transform"
+          title={`${user?.storeName || 'Cápsula'} - ${displayName} (${user?.role || ''})${isCollapsed ? ' - Clic para expandir' : ''}`}
           onClick={() => isCollapsed && toggleSidebarCollapsed()}
         >
-          <div className="flex h-full w-full items-center justify-center rounded-full bg-white text-xs font-bold text-slate-800 dark:bg-slate-900 dark:text-white">
-            {initials}
+          <div className="flex h-full w-full items-center justify-center rounded-full bg-white p-1 dark:bg-slate-900">
+            <img src={CapsulaLogos} alt="Cápsula" className="h-full w-full object-contain" />
           </div>
           <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-900" />
         </div>
