@@ -52,3 +52,23 @@ select {
 .dark textarea:focus {
   background-color: #1e293b !important; /* slate-800, mismo tono que dark:bg-slate-800 */
 }
+
+/* Scrollbar ultra-fino para sidebar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+

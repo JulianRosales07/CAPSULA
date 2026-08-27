@@ -1,11 +1,11 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { useMemo, useState, type ReactElement } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
 import { useUiStore } from '../store/ui-store'
 import { useStoreContext } from '../hooks/useStoreContext'
 import { getDashboardSummary } from '../services/api/dashboard'
 import CapsulaLogos from '../assets/Capsulas.png'
+import { Sidebar, type NavGroup, type NavItem } from './Sidebar'
 import {
   BagIcon,
   BoxIcon,
@@ -14,41 +14,21 @@ import {
   CartIcon,
   CashIcon,
   ChartIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   GearIcon,
   HomeIcon,
-  LogOutIcon,
   MenuIcon,
-  MoonIcon,
   ReceiptIcon,
-  SearchIcon,
   SparkleIcon,
-  SunIcon,
   TruckIcon,
   UserIcon,
   UsersIcon,
-  XIcon,
 } from '../components/icons'
-
 import {
   OPERATOR_ROLES,
   SUPER_ADMIN_ROLE,
   effectivePermissions,
 } from '../shared/utils/permissions'
 import { openSupportWhatsApp } from '../shared/utils/supportContact'
-
-type NavItem = {
-  label: string
-  path: string
-  icon: (props: { className?: string }) => ReactElement
-  badgeKey?: 'lowStock'
-}
-
-type NavGroup = {
-  title: string
-  items: NavItem[]
-}
 
 const superAdminGroups: NavGroup[] = [
   {
@@ -98,8 +78,6 @@ const businessGroups: NavGroup[] = [
   },
 ]
 
-
-// El Cajero solo debe ver Punto de venta, Reservas, Caja, Reportes y Configuración
 const cashierGroups: NavGroup[] = [
   {
     title: 'Operación',
@@ -121,16 +99,9 @@ const cashierGroups: NavGroup[] = [
 
 export function AppShell() {
   const location = useLocation()
-  const [search, setSearch] = useState('')
-
-  const theme = useUiStore((state) => state.theme)
   const sidebarOpen = useUiStore((state) => state.sidebarOpen)
-  const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed)
   const toggleSidebar = useUiStore((state) => state.toggleSidebar)
   const setSidebarOpen = useUiStore((state) => state.setSidebarOpen)
-  const toggleSidebarCollapsed = useUiStore((state) => state.toggleSidebarCollapsed)
-  const toggleTheme = useUiStore((state) => state.toggleTheme)
-  const logout = useUiStore((state) => state.logout)
   const user = useUiStore((state) => state.user)
 
   const isSuperAdmin = user?.role === SUPER_ADMIN_ROLE
@@ -157,7 +128,7 @@ export function AppShell() {
       .map((group) => ({
         ...group,
         items: group.items.filter(
-          (item) => allowedSet.has(item.path) && (item.path !== '/reservas' || canSeeReservas)
+          (item) => allowedSet.has(item.path) && (item.path !== '/reservas' || canSeeReservas),
         ),
       }))
       .filter((group) => group.items.length > 0)
@@ -173,17 +144,6 @@ export function AppShell() {
     lowStock: summary?.lowStock?.length ?? 0,
   }
 
-  const filteredGroups = useMemo(() => {
-    if (!search.trim()) return groups
-    const term = search.trim().toLowerCase()
-    return groups
-      .map((group) => ({
-        ...group,
-        items: group.items.filter((item) => item.label.toLowerCase().includes(term)),
-      }))
-      .filter((group) => group.items.length > 0)
-  }, [groups, search])
-
   const allItems = useMemo(() => groups.flatMap((g) => g.items), [groups])
   const activeLabel = useMemo(
     () =>
@@ -192,267 +152,112 @@ export function AppShell() {
     [location.pathname, allItems, isSuperAdmin, isOperator],
   )
 
-  const handleLogout = () => {
-    logout()
-    toast.success('Sesión cerrada')
-    window.location.href = '/login'
-  }
-
-  const initials = (user?.fullName || 'U')
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-
   const isPos = location.pathname.startsWith('/pos')
 
   return (
-    <div className="h-screen overflow-hidden bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white">
-      <div className="flex h-full">
-        <aside
-          className={`fixed inset-y-0 left-0 z-40 flex border-r border-slate-200 bg-white transition-transform dark:border-slate-800 dark:bg-slate-900 lg:static lg:translate-x-0 ${
+    <div className="h-screen w-screen overflow-hidden bg-[#eef3f9] text-slate-900 dark:bg-[#090d16] dark:text-white flex p-2 sm:p-3 lg:p-4 gap-3 lg:gap-4">
+      {/* 1. Sidebar de Escritorio (Desktop Floating Island) */}
+      <div className="hidden lg:flex shrink-0 h-full">
+        <Sidebar
+          groups={groups}
+          badgeValues={badgeValues}
+          user={user}
+          isSuperAdmin={isSuperAdmin}
+          isOperator={isOperator}
+          storeTerm={storeTerm}
+        />
+      </div>
+
+      {/* 2. Sidebar Móvil (Drawer deslizable con backdrop) */}
+      <div
+        className={`fixed inset-0 z-50 lg:hidden transition-all duration-300 ${
+          sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        {/* Backdrop desenfocado */}
+        <div
+          className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
+          onClick={() => setSidebarOpen(false)}
+        />
+        {/* Panel lateral flotante en móvil */}
+        <div
+          className={`relative h-full max-w-[290px] p-3 transition-transform duration-300 ease-out ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
-          {/* Rail de iconos, siempre visible */}
-          <div className="flex w-16 flex-col items-center gap-1 border-r border-slate-200 bg-slate-950 py-4 dark:border-slate-800">
-            <div className="mb-3 flex h-9 w-9 items-center justify-center">
-              <img src={CapsulaLogos} alt="Capsula" className="h-10 w-10" />
+          <Sidebar
+            groups={groups}
+            badgeValues={badgeValues}
+            user={user}
+            isSuperAdmin={isSuperAdmin}
+            isOperator={isOperator}
+            storeTerm={storeTerm}
+            isMobile={true}
+            onCloseMobile={() => setSidebarOpen(false)}
+          />
+        </div>
+      </div>
+
+      {/* 3. Área de Contenido Principal (Surface card) */}
+      <div className="relative flex flex-1 min-w-0 flex-col overflow-hidden rounded-[26px] border border-white/80 bg-white/90 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/90 backdrop-blur-xl">
+        {/* Banner de prueba vencida o próxima a vencer */}
+        {!isSuperAdmin && user?.isTrialExpired ? (
+          <div className="border-b border-red-200 bg-red-50 px-4 py-2.5 text-red-900 dark:border-red-900/50 dark:bg-red-950/60 dark:text-red-200 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm z-30 shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-base shrink-0">⚠️</span>
+              <span className="leading-tight">
+                <strong>Período de prueba finalizado:</strong> La aplicación está en <u>modo solo lectura</u> (no es posible registrar ventas ni compras).
+              </span>
             </div>
-            <div className="flex flex-1 flex-col items-center gap-1 overflow-x-hidden overflow-y-auto">
-              {allItems.map((item) => {
-                const isActive = location.pathname.startsWith(item.path)
-                const Icon = item.icon
-                const badge = item.badgeKey ? badgeValues[item.badgeKey] : undefined
-                return (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    title={item.label}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`relative flex h-10 w-10 items-center justify-center rounded-lg transition ${
-                      isActive
-                        ? 'bg-white/10 text-white'
-                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" />
-                    {badge ? (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-cyan-500 px-1 text-[10px] font-semibold text-white">
-                        {badge}
-                      </span>
-                    ) : null}
-                  </NavLink>
-                )
-              })}
-            </div>
-            {sidebarCollapsed ? (
-              <div className="flex flex-col items-center gap-1 border-t border-white/10 pt-2">
-                <button
-                  type="button"
-                  title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-                  onClick={toggleTheme}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white"
-                >
-                  {theme === 'dark' ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
-                </button>
-                <button
-                  type="button"
-                  title="Cerrar sesión"
-                  onClick={handleLogout}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white"
-                >
-                  <LogOutIcon className="h-4 w-4" />
-                </button>
-              </div>
-            ) : null}
             <button
               type="button"
-              title={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
-              onClick={toggleSidebarCollapsed}
-              className="mt-2 flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white"
+              onClick={() => openSupportWhatsApp(user?.storeName, user?.fullName, 'reactivar el sistema y plan')}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-red-700 transition shrink-0"
             >
-              {sidebarCollapsed ? (
-                <ChevronRightIcon className="h-4 w-4" />
-              ) : (
-                <ChevronLeftIcon className="h-4 w-4" />
-              )}
+              <span>💬 Contactar a Soporte</span>
             </button>
           </div>
+        ) : !isSuperAdmin && user?.subscriptionStatus === 'TRIAL' && (user?.daysRemaining ?? 99) <= 3 ? (
+          <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/50 dark:text-amber-200 flex flex-wrap items-center justify-between gap-2 text-xs z-30 shrink-0">
+            <span>
+              ⏳ Te quedan <strong>{user?.daysRemaining} {user?.daysRemaining === 1 ? 'día' : 'días'}</strong> de prueba gratuita.
+            </span>
+            <button
+              type="button"
+              onClick={() => openSupportWhatsApp(user?.storeName, user?.fullName, 'activar el plan')}
+              className="font-semibold underline hover:text-amber-700 dark:hover:text-amber-300"
+            >
+              Contactar Soporte →
+            </button>
+          </div>
+        ) : null}
 
-          {/* Panel expandido con grupos, buscador y detalle */}
-          {!sidebarCollapsed ? (
-            <div className="flex w-64 flex-col p-3">
-              <div className="flex items-center justify-between px-1 py-1">
-                <div className="min-w-0">
-                    <p className="flex items-center gap-2 truncate text-sm font-semibold text-slate-900 dark:text-white">
-                      <img
-                        src={CapsulaLogos}
-                        alt="Cápsula"
-                        className="h-12 w-12"
-                      />
-                      <span>Cápsula</span>
-                    </p>
-                  <p
-                    className="truncate text-xs text-slate-400"
-                    title={user?.storeName || (isSuperAdmin ? 'Super Administrador' : storeTerm)}
-                  >
-                    {user?.storeName || (isSuperAdmin ? 'Super Administrador' : storeTerm)}
-                  </p>
+        {/* Cabecera superior */}
+        {!isPos ? (
+          <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/80 backdrop-blur-md md:px-6 shrink-0">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 lg:hidden transition"
+                  onClick={toggleSidebar}
+                  title="Abrir menú"
+                >
+                  <MenuIcon className="h-5 w-5" />
+                </button>
+                <div className="flex items-center gap-2.5">
+                  <img src={CapsulaLogos} alt="Cápsula" className="h-7 w-7 object-contain lg:hidden" />
+                  <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-800 dark:text-white">
+                    {activeLabel}
+                  </h2>
                 </div>
-                <button
-                  type="button"
-                  className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 lg:hidden"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <XIcon className="h-4 w-4" />
-                </button>
               </div>
 
-              {/* Chip de usuario */}
-              {user ? (
-                <div className="mt-3 flex items-center gap-2.5 rounded-lg bg-slate-100 p-2.5 dark:bg-slate-800">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">
-                    {initials}
-                  </div>
-                  <div className="min-w-0 leading-tight">
-                    <p className="truncate text-xs font-medium text-slate-700 dark:text-slate-300">
-                      {user.fullName}
-                    </p>
-                    <p className="truncate text-xs text-slate-400">{user.role}</p>
-                  </div>
-                </div>
-              ) : null}
-
-              {/* Buscador de navegación */}
-              <div className="relative mt-3">
-                <SearchIcon className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Buscar en el menú"
-                  className="w-full rounded-md border border-slate-200 bg-white py-1.5 pl-8 pr-2 text-xs text-slate-700 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                />
-              </div>
-
-              <nav className="mt-3 flex-1 space-y-4 overflow-y-auto pr-1">
-                {filteredGroups.map((group) => (
-                  <div key={group.title}>
-                    <p className="px-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                      {group.title}
-                    </p>
-                    <div className="mt-1 space-y-0.5">
-                      {group.items.map((item) => {
-                        const Icon = item.icon
-                        const badge = item.badgeKey ? badgeValues[item.badgeKey] : undefined
-                        return (
-                          <NavLink
-                            key={item.path}
-                            to={item.path}
-                            className={({ isActive }) =>
-                              `flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition ${
-                                isActive
-                                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300'
-                                  : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
-                              }`
-                            }
-                            onClick={() => setSidebarOpen(false)}
-                          >
-                            <Icon className="h-4.5 w-4.5 shrink-0" />
-                            <span className="truncate">{item.label}</span>
-                            {badge ? (
-                              <span className="ml-auto rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                                {badge}
-                              </span>
-                            ) : null}
-                          </NavLink>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))}
-                {filteredGroups.length === 0 ? (
-                  <p className="px-2 text-xs text-slate-400">Sin resultados</p>
-                ) : null}
-              </nav>
-
-              {/* Tema y cierre de sesión */}
-              <div className="mt-2 space-y-1.5 border-t border-slate-200 pt-2 dark:border-slate-800">
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2.5 whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                  onClick={toggleTheme}
-                >
-                  {theme === 'dark' ? (
-                    <SunIcon className="h-4.5 w-4.5 shrink-0" />
-                  ) : (
-                    <MoonIcon className="h-4.5 w-4.5 shrink-0" />
-                  )}
-                  {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-                </button>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2.5 whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                  onClick={handleLogout}
-                >
-                  <LogOutIcon className="h-4.5 w-4.5 shrink-0" />
-                  Cerrar sesión
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </aside>
-
-        <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
-          {/* Banner de prueba vencida o próxima a vencer */}
-          {!isSuperAdmin && user?.isTrialExpired ? (
-            <div className="border-b border-red-200 bg-red-50 px-4 py-2.5 text-red-900 dark:border-red-900/50 dark:bg-red-950/60 dark:text-red-200 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm z-30 shrink-0">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-base shrink-0">⚠️</span>
-                <span className="leading-tight">
-                  <strong>Período de prueba finalizado:</strong> La aplicación está en <u>modo solo lectura</u> (no es posible registrar ventas ni compras).
+              {/* Badge de suscripción y tienda */}
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline-block text-xs font-medium text-slate-400 dark:text-slate-500">
+                  {user?.storeName || (isSuperAdmin ? 'Super Administrador' : storeTerm)}
                 </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => openSupportWhatsApp(user?.storeName, user?.fullName, 'reactivar el sistema y plan')}
-                className="inline-flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-red-700 transition shrink-0"
-              >
-                <span>💬 Contactar a Soporte</span>
-              </button>
-            </div>
-          ) : !isSuperAdmin && user?.subscriptionStatus === 'TRIAL' && (user?.daysRemaining ?? 99) <= 3 ? (
-            <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/50 dark:text-amber-200 flex flex-wrap items-center justify-between gap-2 text-xs z-30 shrink-0">
-              <span>
-                ⏳ Te quedan <strong>{user?.daysRemaining} {user?.daysRemaining === 1 ? 'día' : 'días'}</strong> de prueba gratuita. Contacta a soporte para continuar operando sin interrupciones.
-              </span>
-              <button
-                type="button"
-                onClick={() => openSupportWhatsApp(user?.storeName, user?.fullName, 'activar el plan')}
-                className="font-semibold underline hover:text-amber-700 dark:hover:text-amber-300"
-              >
-                Contactar Soporte →
-              </button>
-            </div>
-          ) : null}
-
-          {!isPos ? (
-            <header className="sticky top-0 z-30 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 md:px-6 shrink-0">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    className="rounded-md border border-slate-200 p-1.5 dark:border-slate-700 lg:hidden"
-                    onClick={toggleSidebar}
-                  >
-                    <MenuIcon className="h-4 w-4" />
-                  </button>
-                  <h2 className="text-lg font-semibold">{activeLabel}</h2>
-                </div>
-
-                {/* Badge de suscripción en header */}
                 {!isSuperAdmin && (
                   <div className="flex items-center gap-2">
                     {user?.isTrialExpired ? (
@@ -460,7 +265,7 @@ export function AppShell() {
                         🔴 Modo Solo Lectura
                       </span>
                     ) : user?.subscriptionStatus === 'TRIAL' ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-[#2b66ff] dark:bg-blue-500/10 dark:text-blue-300">
                         ⏳ Prueba ({user.daysRemaining ?? 0}d)
                       </span>
                     ) : user?.subscriptionStatus === 'ACTIVE' ? (
@@ -471,31 +276,25 @@ export function AppShell() {
                   </div>
                 )}
               </div>
-            </header>
-          ) : (
-            <button
-              type="button"
-              className="absolute left-2 top-2 z-30 rounded-md border border-slate-200 bg-white p-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-900 lg:hidden"
-              onClick={toggleSidebar}
-            >
-              <MenuIcon className="h-4 w-4" />
-            </button>
-          )}
+            </div>
+          </header>
+        ) : (
+          <button
+            type="button"
+            className="absolute left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white/90 p-1.5 shadow-md backdrop-blur-md dark:border-slate-700 dark:bg-slate-900/90 text-slate-600 dark:text-slate-200 lg:hidden transition"
+            onClick={toggleSidebar}
+            title="Abrir menú"
+          >
+            <MenuIcon className="h-5 w-5" />
+          </button>
+        )}
 
-          <main className={isPos ? 'flex-1 overflow-hidden' : 'flex-1 overflow-y-auto px-4 py-6 md:px-6'}>
-            <Outlet />
-          </main>
-        </div>
+        {/* Contenido de la página */}
+        <main className={isPos ? 'flex-1 overflow-hidden' : 'flex-1 overflow-y-auto px-4 py-5 md:px-6'}>
+          <Outlet />
+        </main>
       </div>
-
-      {sidebarOpen ? (
-        <button
-          type="button"
-          aria-label="Cerrar menú"
-          className="fixed inset-0 z-30 bg-slate-950/40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      ) : null}
     </div>
   )
 }
+
