@@ -29,7 +29,10 @@ function formatDateTime(dateStr: string) {
 }
 
 function toDateInputValue(date: Date) {
-  return date.toISOString().slice(0, 10)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function invoiceNumber(saleId: string) {
@@ -127,9 +130,11 @@ export function InvoicesPage() {
         if (to && created > to) return false
         if (term) {
           const matchesInvoice = invoiceNumber(sale.id).toLowerCase().includes(term)
-          const matchesCustomer = (sale.customers?.full_name || 'venta de mostrador')
-            .toLowerCase()
-            .includes(term)
+          const customerNameStr =
+            sale.customers?.full_name ||
+            (sale.notes ? sale.notes.replace('Cliente: ', '') : '') ||
+            'venta de mostrador'
+          const matchesCustomer = customerNameStr.toLowerCase().includes(term)
           const matchesProduct = sale.sale_items.some((item) =>
             item.products.name.toLowerCase().includes(term),
           )
@@ -194,10 +199,28 @@ export function InvoicesPage() {
       {
         header: 'Cliente',
         id: 'customer',
-        cell: ({ row }) =>
-          row.original.customers?.full_name ||
-          (row.original.notes ? row.original.notes.replace('Cliente: ', '') : null) ||
-          'Venta de mostrador',
+        cell: ({ row }) => {
+          const isPending = row.original.payment_method === 'PENDING'
+          const customerName =
+            row.original.customers?.full_name ||
+            (row.original.notes ? row.original.notes.replace('Cliente: ', '') : null) ||
+            'Venta de mostrador'
+
+          if (isPending) {
+            return (
+              <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800 ring-1 ring-inset ring-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300 dark:ring-amber-500/40">
+                <span className="text-amber-600 dark:text-amber-400">⏳</span>
+                <span>{customerName}</span>
+              </span>
+            )
+          }
+
+          return (
+            <span className="text-slate-700 dark:text-slate-300 font-medium">
+              {customerName}
+            </span>
+          )
+        },
       },
       {
         header: 'Cajero',
