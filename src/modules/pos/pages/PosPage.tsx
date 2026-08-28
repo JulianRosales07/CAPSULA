@@ -26,6 +26,8 @@ type CartItem = {
   name: string
   /** Precio de la presentación elegida */
   price: number
+  /** Precio original de catálogo para referencia */
+  originalPrice?: number
   /** Cantidad en la presentación elegida (no en unidades base) */
   quantity: number
   /** Stock disponible en UNIDADES BASE */
@@ -381,6 +383,7 @@ export function PosPage() {
       sku: 'CANCHA',
       name: `Alquiler ${res.courtName} (${res.reservationDate} ${res.startTime}–${res.endTime})`,
       price: res.pendingBalance,
+      originalPrice: res.pendingBalance,
       quantity: 1,
       stock: 9999,
       unitFactor: 1,
@@ -605,6 +608,7 @@ export function PosPage() {
           sku: product.sku,
           name: product.name,
           price: presentation.price,
+          originalPrice: presentation.price,
           quantity,
           stock: product.stock,
           unitFactor: presentation.factor,
@@ -683,6 +687,13 @@ export function PosPage() {
     }
     setCart((current) =>
       current.map((cartItem, i) => (i === index ? { ...cartItem, quantity: newQuantity } : cartItem)),
+    )
+  }
+
+  const updatePrice = (index: number, newPrice: number) => {
+    const validPrice = Math.max(0, isNaN(newPrice) ? 0 : newPrice)
+    setCart((current) =>
+      current.map((cartItem, i) => (i === index ? { ...cartItem, price: validPrice } : cartItem)),
     )
   }
 
@@ -1146,7 +1157,7 @@ export function PosPage() {
                   <th className="px-4 py-2 text-left font-medium">Código</th>
                   <th className="px-4 py-2 text-left font-medium">Descripción</th>
                   <th className="w-32 px-4 py-2 text-center font-medium">Cant.</th>
-                  <th className="w-28 px-4 py-2 text-right font-medium">Precio</th>
+                  <th className="w-36 px-4 py-2 text-right font-medium">Precio</th>
                   <th className="w-32 px-4 py-2 text-right font-medium">Importe</th>
                   <th className="w-10" />
                 </tr>
@@ -1198,7 +1209,30 @@ export function PosPage() {
                         </button>
                       </div>
                     </td>
-                    <td className="px-4 py-2 text-right text-slate-600 dark:text-slate-300">{money(item.price)}</td>
+                    <td className="px-3 py-2 text-right">
+                      <div className="flex flex-col items-end">
+                        <div className="relative flex items-center justify-end">
+                          <span className="pointer-events-none absolute left-2 text-xs text-slate-400">$</span>
+                          <input
+                            type="number"
+                            value={item.price === 0 ? '' : item.price}
+                            placeholder="0"
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? 0 : parseFloat(e.target.value)
+                              updatePrice(index, isNaN(val) ? 0 : val)
+                            }}
+                            onFocus={(e) => e.target.select()}
+                            className="w-24 sm:w-28 rounded-md border border-slate-200 bg-white py-1 pl-5 pr-2 text-right text-xs font-semibold text-slate-800 transition hover:border-blue-400 focus:border-blue-500 focus:bg-blue-50/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-blue-400"
+                            title="Editar precio de venta para este ticket (no modifica el catálogo)"
+                          />
+                        </div>
+                        {item.originalPrice !== undefined && item.price !== item.originalPrice && (
+                          <span className="mt-0.5 text-[10px] text-slate-400 line-through" title="Precio original de catálogo">
+                            {money(item.originalPrice)}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-2 text-right font-semibold text-slate-900 dark:text-white">
                       {money(item.quantity * item.price)}
                     </td>
