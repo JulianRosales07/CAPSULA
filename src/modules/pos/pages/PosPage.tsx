@@ -373,17 +373,20 @@ export function PosPage() {
 
   const pendingReservationsQuery = useQuery({
     queryKey: ['reservations-pending'],
-    queryFn: () => listReservations({ status: 'PENDING' }),
+    queryFn: () => listReservations(),
     enabled: showReservationPicker,
+    staleTime: 0,
+    refetchOnMount: true,
   })
 
   const loadReservationIntoCart = (res: CourtReservation) => {
+    const balanceToPay = res.pendingBalance > 0 ? res.pendingBalance : res.totalPrice
     const reservationItem: CartItem = {
       productId: `reservation-${res.id}`,
       sku: 'CANCHA',
       name: `Alquiler ${res.courtName} (${res.reservationDate} ${res.startTime}–${res.endTime})`,
-      price: res.pendingBalance,
-      originalPrice: res.pendingBalance,
+      price: balanceToPay,
+      originalPrice: balanceToPay,
       quantity: 1,
       stock: 9999,
       unitFactor: 1,
@@ -399,7 +402,7 @@ export function PosPage() {
     setSelectedCustomerId(res.customerId || null)
     updateActiveTab({ reservationId: res.id })
     setShowReservationPicker(false)
-    toast.success(`Cancha "${res.courtName}" cargada (Saldo: ${money(res.pendingBalance)})`)
+    toast.success(`Cancha "${res.courtName}" cargada (Saldo a cobrar: ${money(balanceToPay)})`)
     setTimeout(() => searchInputRef.current?.focus(), 50)
   }
 
@@ -810,6 +813,7 @@ export function PosPage() {
         amountPaid2: parsedSplit2,
         items: cart.map((item) => ({
           productId: item.productId,
+          customName: item.name,
           quantity: item.quantity,
           unitPrice: item.price,
           unitFactor: item.unitFactor,
@@ -833,6 +837,7 @@ export function PosPage() {
       paymentMethod,
       items: cart.map((item) => ({
         productId: item.productId,
+        customName: item.name,
         quantity: item.quantity,
         unitPrice: item.price,
         unitFactor: item.unitFactor,
@@ -970,7 +975,11 @@ export function PosPage() {
             {/* Botones normales: visibles solo en pantallas medianas+ */}
             {hasReservations && (
               <button
-                onClick={() => setShowReservationPicker(true)}
+                onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ['reservations'] })
+                  queryClient.invalidateQueries({ queryKey: ['reservations-pending'] })
+                  setShowReservationPicker(true)
+                }}
                 className="hidden items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 md:flex"
                 title="Cargar una reserva de cancha y liquidar saldo"
               >
@@ -1014,7 +1023,12 @@ export function PosPage() {
                 <div className="absolute right-0 top-full z-30 mt-1 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
                   {hasReservations && (
                     <button
-                      onClick={() => { setShowReservationPicker(true); setShowMobileMenu(false) }}
+                      onClick={() => {
+                        queryClient.invalidateQueries({ queryKey: ['reservations'] })
+                        queryClient.invalidateQueries({ queryKey: ['reservations-pending'] })
+                        setShowReservationPicker(true)
+                        setShowMobileMenu(false)
+                      }}
                       className="flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-blue-600 transition hover:bg-slate-50 dark:text-blue-400 dark:hover:bg-slate-800"
                     >
                       ⚽ Cargar Reserva
@@ -2240,7 +2254,7 @@ export function PosPage() {
             <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
               {pendingReservationsQuery.isLoading ? (
                 <div className="py-12 text-center text-sm text-slate-400">Cargando reservas pendientes...</div>
-              ) : (pendingReservationsQuery.data || []).length === 0 ? (
+              ) : (pendingReservationsQuery.data || []).filter((r) => r.status !== 'COMPLETED' && r.status !== 'CANCELLED' && r.pendingBalance > 0).length === 0 ? (
                 <div className="py-12 text-center text-slate-400">
                   <div className="text-3xl mb-1">📅</div>
                   <p className="text-sm font-medium">No hay reservas pendientes de liquidar</p>
@@ -2253,6 +2267,7 @@ export function PosPage() {
                 </div>
               ) : (
                 (pendingReservationsQuery.data || [])
+                  .filter((r) => r.status !== 'COMPLETED' && r.status !== 'CANCELLED' && r.pendingBalance > 0)
                   .filter((r) => {
                     if (!reservationSearchQuery.trim()) return true
                     const q = reservationSearchQuery.toLowerCase()

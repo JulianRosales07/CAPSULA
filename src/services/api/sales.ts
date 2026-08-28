@@ -25,6 +25,7 @@ export type SaleItem = {
   unitFactor?: number;
   unitLabel?: string;
   productUnitId?: string;
+  customName?: string;
 };
 
 export type CreateSaleInput = {

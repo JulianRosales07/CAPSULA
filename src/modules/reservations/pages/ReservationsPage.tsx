@@ -36,6 +36,13 @@ function formatDate(dateStr: string) {
   }).format(d);
 }
 
+function getLocalDateString(date: Date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 const COMMON_COURTS = ['Cancha 1', 'Cancha 2'];
 
 export function ReservationsPage() {
@@ -75,7 +82,7 @@ export function ReservationsPage() {
   const [formCustomerPhone, setFormCustomerPhone] = useState('');
   const [formSelectedCustomerId, setFormSelectedCustomerId] = useState<string | null>(null);
   const [formCourtName, setFormCourtName] = useState('Cancha 1');
-  const [formDate, setFormDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [formDate, setFormDate] = useState(() => getLocalDateString());
   const [formStartTime, setFormStartTime] = useState('19:00');
   const [formEndTime, setFormEndTime] = useState('20:00');
   const [formTotalPrice, setFormTotalPrice] = useState('80000');
@@ -95,6 +102,7 @@ export function ReservationsPage() {
     mutationFn: createReservation,
     onSuccess: (newRes) => {
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['reservations-pending'] });
       queryClient.invalidateQueries({ queryKey: ['cash-register-current'] });
       toast.success('¡Reserva creada exitosamente!');
       setShowCreateModal(false);
@@ -111,6 +119,7 @@ export function ReservationsPage() {
       addReservationAdvance(data.reservationId, data.input),
     onSuccess: (updatedRes) => {
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['reservations-pending'] });
       queryClient.invalidateQueries({ queryKey: ['cash-register-current'] });
       toast.success('¡Abono registrado en caja!');
       setAdvanceModalRes(null);
@@ -125,6 +134,7 @@ export function ReservationsPage() {
     mutationFn: cancelReservation,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['reservations-pending'] });
       toast.success('Reserva cancelada');
     },
     onError: (err: any) => {
@@ -136,6 +146,7 @@ export function ReservationsPage() {
     mutationFn: deleteReservation,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['reservations-pending'] });
       queryClient.invalidateQueries({ queryKey: ['cash-register-current'] });
       toast.success('Reserva eliminada correctamente');
     },
@@ -151,14 +162,14 @@ export function ReservationsPage() {
 
   // Filtrado de reservas
   const filteredReservations = useMemo(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString();
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const tomorrowStr = getLocalDateString(tomorrow);
 
     const weekEnd = new Date();
     weekEnd.setDate(weekEnd.getDate() + 7);
-    const weekEndStr = weekEnd.toISOString().split('T')[0];
+    const weekEndStr = getLocalDateString(weekEnd);
 
     return reservations.filter((r) => {
       // Filtro temporal / estado
@@ -195,7 +206,7 @@ export function ReservationsPage() {
     setFormCustomerPhone('');
     setFormSelectedCustomerId(null);
     setFormCourtName('Cancha 1');
-    setFormDate(new Date().toISOString().split('T')[0]);
+    setFormDate(getLocalDateString());
     setFormStartTime('19:00');
     setFormEndTime('20:00');
     setFormTotalPrice('80000');
