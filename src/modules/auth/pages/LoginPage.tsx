@@ -71,10 +71,10 @@ export function LoginPage() {
       </button>
 
       {/* Main card container */}
-      <div className="relative w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden grid lg:grid-cols-2 min-h-[620px] border border-slate-200/50 dark:border-slate-800 dark:bg-slate-900 z-10">
+      <div className="relative w-full max-w-7xl 2xl:max-w-[1440px] bg-white rounded-3xl shadow-2xl overflow-hidden grid lg:grid-cols-2 min-h-[660px] lg:min-h-[720px] border border-slate-200/50 dark:border-slate-800 dark:bg-slate-900 z-10 transition-all duration-300">
 
         {/* Left Side: Stethoscope image & logo overlay */}
-        <section className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden bg-slate-900 text-white">
+        <section className="relative hidden lg:flex flex-col justify-between p-12 xl:p-16 overflow-hidden bg-slate-900 text-white">
           {/* Stethoscope Background Image with Overlay */}
           <div
             className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity pointer-events-none"
@@ -85,8 +85,8 @@ export function LoginPage() {
           <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-slate-900/90 to-cyan-950/40 pointer-events-none" />
 
           {/* Cyan Concentric Rings Decoration */}
-          <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full border-[18px] border-cyan-400/30 pointer-events-none" />
-          <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full border-[18px] border-cyan-400/20 pointer-events-none" />
+          <div className="absolute -top-16 -left-16 w-72 h-72 rounded-full border-[20px] border-cyan-400/30 pointer-events-none" />
+          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full border-[20px] border-cyan-400/20 pointer-events-none" />
 
           {/* Logo & Brand Name */}
           <div className="relative z-10">
@@ -103,23 +103,23 @@ export function LoginPage() {
         </section>
 
         {/* Right Side: Form */}
-        <section className="flex flex-col justify-between p-8 sm:p-12 bg-white dark:bg-slate-900">
+        <section className="flex flex-col justify-between p-8 sm:p-12 xl:p-16 bg-white dark:bg-slate-900">
 
 
 
           {/* Center Form Section */}
-          <div className="w-full max-w-sm mx-auto my-auto">
+          <div className="w-full max-w-md mx-auto my-auto">
             {/* Center Logo */}
-            <div className="flex justify-center mb-4">
-              <img src={CapsulaLogo} alt="Capsula" className="h-25 w-25" />
+            <div className="flex justify-center mb-5">
+              <img src={CapsulaLogo} alt="Capsula" className="h-28 w-28 drop-shadow-sm" />
             </div>
 
             {/* Title & Subtitle */}
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white tracking-tight">
                 Iniciar Sesión
               </h2>
-              <p className="text-xs text-slate-400 mt-2">
+              <p className="text-xs sm:text-sm text-slate-400 mt-2">
                 Ingresa a tu cuenta de membresía
               </p>
             </div>
@@ -137,7 +137,7 @@ export function LoginPage() {
                 <input
                   type="email"
                   placeholder="Usuario o Correo Electrónico"
-                  className="w-full rounded-full border border-slate-200 bg-slate-50/50 pl-11 pr-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-full border border-slate-200 bg-slate-50/50 pl-11 pr-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   {...register('email', { required: true })}
                 />
               </div>
@@ -153,7 +153,7 @@ export function LoginPage() {
                 <input
                   type="password"
                   placeholder="Contraseña"
-                  className="w-full rounded-full border border-slate-200 bg-slate-50/50 pl-11 pr-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-full border border-slate-200 bg-slate-50/50 pl-11 pr-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   {...register('password', { required: true, minLength: 6 })}
                 />
               </div>
@@ -164,7 +164,7 @@ export function LoginPage() {
               <button
                 type="submit"
                 disabled={formState.isSubmitting}
-                className="w-full rounded-full bg-cyan-400 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-400/25 transition hover:bg-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 disabled:opacity-60"
+                className="w-full rounded-full bg-cyan-400 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-400/25 transition hover:bg-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 disabled:opacity-60"
               >
                 {formState.isSubmitting ? 'Ingresando...' : 'Ingresar'}
               </button>
