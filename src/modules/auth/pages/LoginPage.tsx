@@ -54,29 +54,14 @@ export function LoginPage() {
   })
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 lg:p-8 dark:bg-slate-950 font-sans relative overflow-hidden">
-      {/* Background ring decoration */}
-      <div className="absolute top-0 left-0 w-96 h-96 rounded-full bg-cyan-400/20 -translate-x-1/3 -translate-y-1/3 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-blue-400/10 translate-x-1/3 translate-y-1/3 blur-3xl pointer-events-none" />
-
-      {/* Botón de tema, fijo en la esquina superior derecha */}
-      <button
-        type="button"
-        onClick={toggleTheme}
-        title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-        className="group absolute right-4 top-4 z-20 flex items-center gap-2.5 rounded-full border border-slate-200/80 bg-white/80 px-3.5 py-1.5 sm:py-2 text-xs font-semibold text-slate-700 shadow-md shadow-slate-900/5 backdrop-blur-md transition-all duration-300 hover:border-cyan-400 hover:bg-white hover:shadow-cyan-500/15 hover:scale-105 active:scale-95 dark:border-slate-700/80 dark:bg-slate-900/80 dark:text-slate-200 dark:shadow-black/20 dark:hover:border-cyan-400 dark:hover:bg-slate-900 lg:right-8 lg:top-8"
-      >
-        <span className="relative flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-sm transition-transform duration-300 group-hover:rotate-45 dark:from-indigo-500 dark:to-cyan-400">
-          {theme === 'dark' ? (
-            <SunIcon className="h-3.5 w-3.5 text-amber-200" />
-          ) : (
-            <MoonIcon className="h-3.5 w-3.5 text-white" />
-          )}
-        </span>
-        <span className="hidden sm:inline font-medium">
-          {theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}
-        </span>
-      </button>
+    <div
+      className="min-h-screen flex items-center justify-center p-3 sm:p-4 lg:p-6 font-sans relative overflow-hidden bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: `url('https://i.pinimg.com/1200x/58/7b/0c/587b0ce902d8df257d09b8f8f5beac07.jpg')`,
+      }}
+    >
+      {/* Overlay sutil para modo oscuro y contraste */}
+      <div className="absolute inset-0 bg-slate-950/10 dark:bg-slate-950/75 backdrop-blur-[1px] transition-colors duration-300 pointer-events-none" />
 
       {/* Main card container */}
       <div className="relative w-full max-w-7xl 2xl:max-w-[1440px] bg-white rounded-3xl shadow-2xl overflow-hidden grid lg:grid-cols-2 border border-slate-200/50 dark:border-slate-800 dark:bg-slate-900 z-10 transition-all duration-300 my-auto">
@@ -111,7 +96,25 @@ export function LoginPage() {
         </section>
 
         {/* Right Side: Form */}
-        <section className="flex flex-col justify-center p-6 sm:p-8 lg:p-10 xl:p-12 bg-white dark:bg-slate-900">
+        <section className="relative flex flex-col justify-center p-6 sm:p-8 lg:p-10 xl:p-12 bg-white dark:bg-slate-900">
+          {/* Botón de tema dentro de la tarjeta (esquina superior derecha) */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            className="group absolute right-4 top-4 sm:right-6 sm:top-6 z-20 flex items-center gap-2 rounded-full border border-slate-200/90 bg-slate-50/90 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm backdrop-blur-sm transition-all duration-200 hover:border-cyan-400 hover:bg-white hover:text-slate-900 hover:shadow-md hover:scale-105 active:scale-95 dark:border-slate-700 dark:bg-slate-800/90 dark:text-slate-300 dark:hover:border-cyan-400 dark:hover:bg-slate-800 dark:hover:text-white"
+          >
+            <span className="relative flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-xs transition-transform duration-300 group-hover:rotate-45 dark:from-indigo-500 dark:to-cyan-400">
+              {theme === 'dark' ? (
+                <SunIcon className="h-3 w-3 text-amber-200" />
+              ) : (
+                <MoonIcon className="h-3 w-3 text-white" />
+              )}
+            </span>
+            <span className="hidden sm:inline text-xs font-semibold">
+              {theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}
+            </span>
+          </button>
 
           {/* Center Form Section */}
           <div className="w-full max-w-md mx-auto py-2">
