@@ -339,6 +339,130 @@ export function InvoicesPage() {
     [],
   )
 
+  const renderSaleCard = (sale: Sale) => {
+    const canReturn = sale.status !== 'RETURNED' && sale.status !== 'CANCELLED'
+    const isPending = sale.payment_method === 'PENDING'
+    const customerName =
+      sale.customers?.full_name ||
+      (sale.notes ? sale.notes.replace('Cliente: ', '') : null) ||
+      'Venta de mostrador'
+    const itemsCount = sale.sale_items?.reduce((sum, item) => sum + item.unit_quantity, 0) || 0
+    const paymentLabel = sale.payment_method_2
+      ? `${PAYMENT_METHOD_LABELS[sale.payment_method] || sale.payment_method} + ${PAYMENT_METHOD_LABELS[sale.payment_method_2] || sale.payment_method_2}`
+      : PAYMENT_METHOD_LABELS[sale.payment_method] || sale.payment_method
+
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 space-y-2.5">
+        {/* Encabezado: Nº Factura, Estado y Total */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+              {invoiceNumber(sale.id)}
+            </span>
+            {renderSaleStatus(sale.status)}
+          </div>
+          <span
+            className={`text-base font-bold shrink-0 ${
+              isPending ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'
+            }`}
+          >
+            {money(sale.total)}
+          </span>
+        </div>
+
+        {/* Metadatos: Fecha e Ítems */}
+        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <span>📅 {formatDateTime(sale.created_at)}</span>
+          <span className="font-medium text-slate-600 dark:text-slate-300">
+            {itemsCount} {itemsCount === 1 ? 'ítem' : 'ítems'}
+          </span>
+        </div>
+
+        {/* Cliente y Medio de pago */}
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-slate-400 shrink-0">👤</span>
+            <span className="truncate font-medium text-slate-700 dark:text-slate-300" title={customerName}>
+              {customerName}
+            </span>
+          </div>
+          <div className="shrink-0">
+            {isPending ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-500/30 dark:bg-amber-950/50 dark:text-amber-300">
+                ⏳ Fiado
+              </span>
+            ) : (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                {paymentLabel}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Cajero si existe */}
+        {sale.users?.full_name && (
+          <p className="text-[11px] text-slate-400 dark:text-slate-500">
+            Atendió: <span className="font-medium text-slate-600 dark:text-slate-300">{sale.users.full_name}</span>
+          </p>
+        )}
+
+        {/* Botones de acción táctiles y accesibles */}
+        <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              setViewingSale(sale)
+            }}
+            className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 transition active:scale-95"
+          >
+            Ver detalle
+          </button>
+
+          {isPending && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setPayingPendingSale(sale)
+                setPendingPayMethod('CASH')
+              }}
+              className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition active:scale-95 shadow-sm"
+              title="Registrar cobro"
+            >
+              ✅ Cobrar
+            </button>
+          )}
+
+          {canReturn && !isPending && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setReturningSale(sale)
+              }}
+              className="inline-flex items-center justify-center gap-1 rounded-lg bg-amber-50 px-2.5 py-2 text-xs font-medium text-amber-700 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300 dark:hover:bg-amber-900/40 transition active:scale-95"
+              title="Devolver productos"
+            >
+              🔄 Devolver
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleReprint(sale)
+            }}
+            className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition active:scale-95"
+            title="Reimprimir ticket"
+          >
+            🖨️
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -452,7 +576,11 @@ export function InvoicesPage() {
               : 'No hay facturas registradas en el rango seleccionado.'}
           </div>
         ) : (
-          <DataTable data={filteredSales.filter(s => !showOnlyPending || s.payment_method === 'PENDING')} columns={columns} />
+          <DataTable
+            data={filteredSales.filter(s => !showOnlyPending || s.payment_method === 'PENDING')}
+            columns={columns}
+            renderMobileCard={renderSaleCard}
+          />
         )}
       </SectionCard>
 

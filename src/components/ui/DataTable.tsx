@@ -16,6 +16,8 @@ type DataTableProps<TData> = {
   paginated?: boolean
   /** Tamaño de página inicial. Por defecto: 10. */
   defaultPageSize?: number
+  /** Renderizado opcional de tarjeta para pantallas móviles (< md) */
+  renderMobileCard?: (item: TData, index: number) => React.ReactNode
 }
 
 const PAGE_SIZE_OPTIONS = [10, 50, 100]
@@ -25,6 +27,7 @@ export function DataTable<TData>({
   columns,
   paginated = true,
   defaultPageSize = 10,
+  renderMobileCard,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: defaultPageSize })
@@ -49,7 +52,17 @@ export function DataTable<TData>({
 
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
-      <div className="overflow-x-auto">
+      {renderMobileCard && (
+        <div className="divide-y divide-slate-100 bg-slate-50/50 p-3 space-y-3 dark:divide-slate-800/60 dark:bg-slate-900/40 md:hidden">
+          {rows.map((row, idx) => (
+            <div key={row.id} className={idx > 0 ? 'pt-3' : ''}>
+              {renderMobileCard(row.original, idx)}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className={`overflow-x-auto ${renderMobileCard ? 'hidden md:block' : ''}`}>
         <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-800/60">
             {table.getHeaderGroups().map((headerGroup) => (
