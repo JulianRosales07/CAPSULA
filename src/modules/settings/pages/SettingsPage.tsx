@@ -19,6 +19,7 @@ type GeneralFormValues = {
   cashierName: string
   notifications: boolean
   autoPrint: boolean
+  allowCashierPriceEdit: boolean
   theme: 'light' | 'dark'
 }
 
@@ -84,6 +85,7 @@ export function SettingsPage() {
       cashierName: get('cashierName') ?? 'Caja 1',
       notifications: get('notifications') !== 'false',
       autoPrint: get('autoPrint') !== 'false',
+      allowCashierPriceEdit: get('allowCashierPriceEdit') === 'true',
       theme: (get('theme') as 'light' | 'dark') ?? currentTheme,
     })
   }, [dbSettings])
@@ -95,6 +97,7 @@ export function SettingsPage() {
         cashierName: v.cashierName,
         notifications: v.notifications ? 'true' : 'false',
         autoPrint: v.autoPrint ? 'true' : 'false',
+        allowCashierPriceEdit: v.allowCashierPriceEdit ? 'true' : 'false',
         theme: v.theme,
       }),
     onSuccess: (_, v) => {
@@ -259,6 +262,18 @@ export function SettingsPage() {
                   </span>
                   <span className="text-xs text-slate-500 dark:text-slate-400 block">
                     Imprimir la factura automáticamente al cobrar en el POS
+                  </span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-2.5 dark:border-slate-700 dark:bg-slate-800 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-750 transition md:col-span-2">
+                <input type="checkbox" className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" {...generalForm.register('allowCashierPriceEdit')} />
+                <div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200 block">
+                    Permitir a cajeros/vendedores modificar precio en ventas (POS)
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 block">
+                    Permite que el personal operativo pueda modificar el precio de los productos en el ticket de venta. Si está desactivado, solo los administradores podrán cambiar precios o autorizar la modificación.
                   </span>
                 </div>
               </label>

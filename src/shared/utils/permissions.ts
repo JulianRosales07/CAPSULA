@@ -5,11 +5,29 @@
  */
 
 export const SUPER_ADMIN_ROLE = 'Super Administrador'
+export const PHARMACY_ADMIN_ROLE = 'Administrador de Drogueria'
+export const STORE_ADMIN_ROLE = 'Administrador de Tienda'
+export const LEGACY_ADMIN_ROLE = 'Administrador'
+
 export const CASHIER_ROLE = 'Cajero'
 export const SELLER_ROLE = 'Vendedor'
 
+/** Roles administrativos del sistema */
+export const ADMIN_ROLES = [
+  SUPER_ADMIN_ROLE,
+  PHARMACY_ADMIN_ROLE,
+  STORE_ADMIN_ROLE,
+  LEGACY_ADMIN_ROLE,
+]
+
 /** Roles de operación (caja/venta) */
 export const OPERATOR_ROLES = [CASHIER_ROLE, SELLER_ROLE]
+
+/** Verifica si un usuario tiene rol administrativo */
+export function isAdminUser(user: { role?: string } | null | undefined): boolean {
+  if (!user?.role) return false
+  return ADMIN_ROLES.includes(user.role)
+}
 
 /** Páginas que se pueden asignar a un usuario */
 export const ALL_PAGES = [
