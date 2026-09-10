@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { DataTable } from '../../../components/ui/DataTable'
 import { SectionCard } from '../../../components/ui/SectionCard'
 import { listUsers, deleteUser, updateUser, type UserRecord } from '../../../services/api/users'
+import { listSettings, updateSetting, createSetting } from '../../../services/api/settings'
 import { UserFormModal } from '../components/UserFormModal'
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
@@ -22,6 +23,34 @@ export function UsersPage() {
   const usersQuery = useQuery({
     queryKey: ['users'],
     queryFn: listUsers,
+  })
+
+  const settingsQuery = useQuery({
+    queryKey: ['settings'],
+    queryFn: listSettings,
+  })
+  const dbSettings = settingsQuery.data ?? []
+  const allowCashierPriceEdit = dbSettings.find((s) => s.key === 'allowCashierPriceEdit')?.value === 'true'
+
+  const togglePriceAuthMutation = useMutation({
+    mutationFn: async (nextVal: boolean) => {
+      const existing = dbSettings.find((s) => s.key === 'allowCashierPriceEdit')
+      if (existing) {
+        await updateSetting('allowCashierPriceEdit', nextVal ? 'true' : 'false')
+      } else {
+        await createSetting('allowCashierPriceEdit', nextVal ? 'true' : 'false')
+      }
+      return nextVal
+    },
+    onSuccess: (nextVal) => {
+      queryClient.invalidateQueries({ queryKey: ['settings'] })
+      if (nextVal) {
+        toast.success('Autorización concedida: los cajeros pueden modificar precios en POS')
+      } else {
+        toast.success('Autorización quitada: precios bloqueados para los cajeros')
+      }
+    },
+    onError: () => toast.error('Error al actualizar la autorización'),
   })
 
   const users = usersQuery.data ?? []
@@ -196,15 +225,76 @@ export function UsersPage() {
         title="Gestión de Usuarios"
         description="Administra los usuarios del sistema y sus roles de acceso."
         action={
-          <button
-            type="button"
-            onClick={handleOpenCreate}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-          >
-            + Nuevo usuario
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => togglePriceAuthMutation.mutate(!allowCashierPriceEdit)}
+              disabled={togglePriceAuthMutation.isPending}
+              className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs sm:text-sm font-semibold transition border shadow-xs ${
+                allowCashierPriceEdit
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-700 dark:text-emerald-300'
+                  : 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-300'
+              }`}
+              title="Dar o quitar autorización a los cajeros para modificar precios en el POS"
+            >
+              <span>{allowCashierPriceEdit ? '🔓' : '🔒'}</span>
+              <span>
+                {allowCashierPriceEdit
+                  ? 'Precios en Caja: Autorizado'
+                  : 'Precios en Caja: Bloqueado'}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenCreate}
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+            >
+              + Nuevo usuario
+            </button>
+          </div>
         }
       >
+        {/* Banner de control de autorización de precios */}
+        <div className={`mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border p-4 transition ${
+          allowCashierPriceEdit
+            ? 'border-emerald-200 bg-emerald-50/70 dark:border-emerald-800/40 dark:bg-emerald-950/20'
+            : 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40'
+        }`}>
+          <div className="flex items-center gap-3">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl ${
+              allowCashierPriceEdit ? 'bg-emerald-100 dark:bg-emerald-900/50' : 'bg-slate-200 dark:bg-slate-700'
+            }`}>
+              {allowCashierPriceEdit ? '🔓' : '🔒'}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                Autorización para modificar precios en el Punto de Venta (Cajeros)
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {allowCashierPriceEdit
+                  ? 'Los cajeros y vendedores TIENEN autorización para modificar precios en el ticket de venta.'
+                  : 'Los precios están BLOQUEADOS para cajeros y vendedores. Solo los administradores pueden modificarlos.'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => togglePriceAuthMutation.mutate(!allowCashierPriceEdit)}
+            disabled={togglePriceAuthMutation.isPending}
+            className={`shrink-0 rounded-lg px-4 py-2 text-xs sm:text-sm font-semibold transition border shadow-xs ${
+              allowCashierPriceEdit
+                ? 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100 dark:bg-red-950/40 dark:border-red-800 dark:text-red-300'
+                : 'bg-emerald-600 border-transparent text-white hover:bg-emerald-700'
+            }`}
+          >
+            {togglePriceAuthMutation.isPending
+              ? 'Actualizando…'
+              : allowCashierPriceEdit
+              ? 'Quitar autorización 🔒'
+              : 'Dar autorización 🔓'}
+          </button>
+        </div>
+
         {/* Stats */}
         <div className="mb-6 grid gap-4 md:grid-cols-3">
           <article className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/60">

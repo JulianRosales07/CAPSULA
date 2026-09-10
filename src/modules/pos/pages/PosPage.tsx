@@ -20,8 +20,7 @@ import { useReceiptConfig } from '../../../hooks/useReceiptConfig'
 import { useStoreContext } from '../../../hooks/useStoreContext'
 import { useUiStore } from '../../../store/ui-store'
 import { isAdminUser } from '../../../shared/utils/permissions'
-import { listSettings } from '../../../services/api/settings'
-import { login } from '../../../services/api/auth'
+import { listSettings, updateSetting, createSetting } from '../../../services/api/settings'
 
 type CartItem = {
   productId: string
@@ -183,13 +182,28 @@ export function PosPage() {
 
   const isAdmin = isAdminUser(user)
   const allowCashierPriceEdit = dbSettings.find((s) => s.key === 'allowCashierPriceEdit')?.value === 'true'
-  const [isPriceEditAuthorized, setIsPriceEditAuthorized] = useState(false)
-  const canEditPrice = isAdmin || allowCashierPriceEdit || isPriceEditAuthorized
+  const canEditPrice = isAdmin || allowCashierPriceEdit
 
-  const [showAdminAuthModal, setShowAdminAuthModal] = useState(false)
-  const [adminAuthForm, setAdminAuthForm] = useState({ usernameOrEmail: '', password: '' })
-  const [adminAuthError, setAdminAuthError] = useState('')
-  const [isAdminAuthenticating, setIsAdminAuthenticating] = useState(false)
+  const togglePriceAuthMutation = useMutation({
+    mutationFn: async (nextVal: boolean) => {
+      const existing = dbSettings.find((s) => s.key === 'allowCashierPriceEdit')
+      if (existing) {
+        await updateSetting('allowCashierPriceEdit', nextVal ? 'true' : 'false')
+      } else {
+        await createSetting('allowCashierPriceEdit', nextVal ? 'true' : 'false')
+      }
+      return nextVal
+    },
+    onSuccess: (nextVal) => {
+      queryClient.invalidateQueries({ queryKey: ['settings'] })
+      if (nextVal) {
+        toast.success('Autorización concedida: los cajeros pueden modificar precios')
+      } else {
+        toast.success('Autorización quitada: precios bloqueados para cajeros')
+      }
+    },
+    onError: () => toast.error('Error al actualizar la autorización'),
+  })
 
   const cashRegisterQuery = useQuery({
     queryKey: ['cash-register-current'],
@@ -437,7 +451,6 @@ export function PosPage() {
       setCompletedSale(sale)
       setLastSale(sale)
       setShowReceipt(true)
-      setIsPriceEditAuthorized(false)
 
       const currentResId = activeTab.reservationId
       if (currentResId) {
@@ -737,7 +750,6 @@ export function PosPage() {
       setCashReceived('')
       setCustomerName('')
       setSelectedCustomerId(null)
-      setIsPriceEditAuthorized(false)
       searchInputRef.current?.focus()
       toast.success('Venta limpiada')
     }
@@ -1006,6 +1018,26 @@ export function PosPage() {
                 ⚽ Cargar Reserva
               </button>
             )}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => togglePriceAuthMutation.mutate(!allowCashierPriceEdit)}
+                disabled={togglePriceAuthMutation.isPending}
+                className={`hidden items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition border shadow-xs md:flex ${
+                  allowCashierPriceEdit
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-700 dark:text-emerald-300'
+                    : 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-300'
+                }`}
+                title={
+                  allowCashierPriceEdit
+                    ? 'Autorización activa para cajeros. Clic para quitar autorización y bloquear precios.'
+                    : 'Precios bloqueados para cajeros. Clic para dar autorización.'
+                }
+              >
+                <span>{allowCashierPriceEdit ? '🔓' : '🔒'}</span>
+                <span>{allowCashierPriceEdit ? 'Precios: Autorizado' : 'Precios: Bloqueado'}</span>
+              </button>
+            )}
             <button
               onClick={() => setShowDailySales(true)}
               className="hidden items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 md:flex"
@@ -1041,6 +1073,18 @@ export function PosPage() {
 
               {showMobileMenu && (
                 <div className="absolute right-0 top-full z-30 mt-1 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        togglePriceAuthMutation.mutate(!allowCashierPriceEdit)
+                        setShowMobileMenu(false)
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 border-b border-slate-100 dark:border-slate-800"
+                    >
+                      <span>{allowCashierPriceEdit ? '🔓' : '🔒'}</span>
+                      <span>{allowCashierPriceEdit ? 'Quitar autorización precios' : 'Autorizar modificación precios'}</span>
+                    </button>
+                  )}
                   {hasReservations && (
                     <button
                       onClick={() => {
@@ -1191,14 +1235,7 @@ export function PosPage() {
                   <th className="px-4 py-2 text-left font-medium">Código</th>
                   <th className="px-4 py-2 text-left font-medium">Descripción</th>
                   <th className="w-32 px-4 py-2 text-center font-medium">Cant.</th>
-                  <th className="w-36 px-4 py-2 text-right font-medium">
-                    Precio
-                    {isPriceEditAuthorized && (
-                      <span className="ml-1 text-[11px] font-normal text-emerald-600 dark:text-emerald-400" title="Precio desbloqueado por administrador">
-                        🔓
-                      </span>
-                    )}
-                  </th>
+                  <th className="w-36 px-4 py-2 text-right font-medium">Precio</th>
                   <th className="w-32 px-4 py-2 text-right font-medium">Importe</th>
                   <th className="w-10" />
                 </tr>
@@ -1269,19 +1306,16 @@ export function PosPage() {
                             />
                           </div>
                         ) : (
-                          <button
-                            type="button"
+                          <div
                             onClick={() => {
-                              setAdminAuthError('')
-                              setAdminAuthForm({ usernameOrEmail: '', password: '' })
-                              setShowAdminAuthModal(true)
+                              toast('Modificación de precio bloqueada. El administrador debe autorizarla desde su panel con el botón de autorización.', { icon: '🔒' })
                             }}
-                            className="group flex items-center justify-end gap-1.5 rounded px-2 py-1 text-right text-xs font-semibold text-slate-800 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
-                            title="Precio bloqueado por el administrador. Clic para solicitar autorización de administrador."
+                            className="flex items-center justify-end gap-1.5 rounded px-2 py-1 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-not-allowed select-none opacity-85"
+                            title="Precio bloqueado. Requiere autorización del Administrador."
                           >
                             <span>{money(item.price)}</span>
-                            <span className="text-slate-400 group-hover:text-blue-600 dark:text-slate-500 text-[11px]" title="Requiere autorización de administrador">🔒</span>
-                          </button>
+                            <span className="text-slate-400 dark:text-slate-500 text-[11px]">🔒</span>
+                          </div>
                         )}
                         {item.originalPrice !== undefined && item.price !== item.originalPrice && (
                           <span className="mt-0.5 text-[10px] text-slate-400 line-through" title="Precio original de catálogo">
@@ -2416,126 +2450,6 @@ export function PosPage() {
           }}
           onClose={() => setShowScanner(false)}
         />
-      )}
-
-      {/* ===== Modal de Autorización de Administrador para Modificar Precio ===== */}
-      {showAdminAuthModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-lg">
-                  🔐
-                </div>
-                <div>
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">
-                    Autorizar modificación
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Requiere Administrador
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAdminAuthModal(false)
-                  setAdminAuthError('')
-                }}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault()
-                if (!adminAuthForm.usernameOrEmail || !adminAuthForm.password) {
-                  setAdminAuthError('Complete el usuario y contraseña')
-                  return
-                }
-                setIsAdminAuthenticating(true)
-                setAdminAuthError('')
-                try {
-                  const authData = await login(adminAuthForm.usernameOrEmail, adminAuthForm.password)
-                  if (isAdminUser(authData.user)) {
-                    setIsPriceEditAuthorized(true)
-                    setShowAdminAuthModal(false)
-                    setAdminAuthForm({ usernameOrEmail: '', password: '' })
-                    toast.success(`Precio desbloqueado por ${authData.user.fullName || authData.user.username}`)
-                  } else {
-                    setAdminAuthError('El usuario ingresado no tiene rol de Administrador.')
-                  }
-                } catch (err: any) {
-                  setAdminAuthError(err?.response?.data?.message || 'Credenciales incorrectas.')
-                } finally {
-                  setIsAdminAuthenticating(false)
-                }
-              }}
-              className="mt-4 space-y-3"
-            >
-              <p className="text-xs text-slate-600 dark:text-slate-300">
-                Ingrese las credenciales del Administrador de Droguería o Tienda para autorizar el cambio de precio en esta venta.
-              </p>
-
-              {adminAuthError && (
-                <div className="rounded-lg bg-red-50 p-2.5 text-xs font-medium text-red-600 dark:bg-red-950/40 dark:text-red-400">
-                  {adminAuthError}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Usuario o Correo
-                </label>
-                <input
-                  type="text"
-                  autoFocus
-                  required
-                  value={adminAuthForm.usernameOrEmail}
-                  onChange={(e) => setAdminAuthForm((prev) => ({ ...prev, usernameOrEmail: e.target.value }))}
-                  placeholder="admin@ejemplo.com"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Contraseña
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={adminAuthForm.password}
-                  onChange={(e) => setAdminAuthForm((prev) => ({ ...prev, password: e.target.value }))}
-                  placeholder="••••••••"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                />
-              </div>
-
-              <div className="mt-4 flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAdminAuthModal(false)
-                    setAdminAuthError('')
-                  }}
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isAdminAuthenticating}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {isAdminAuthenticating ? 'Verificando…' : 'Autorizar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
       )}
     </>
   )
