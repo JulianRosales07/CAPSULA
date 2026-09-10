@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { encryptEnvelope, decryptEnvelope, type EncryptedEnvelope } from '../../shared/utils/crypto'
 
 // Normaliza la URL base quitando slashes finales, para evitar dobles "//"
 // cuando la variable de entorno VITE_API_URL viene con un "/" al final
@@ -25,18 +26,16 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+
+  // Cifrado híbrido (RSA Asimétrico + Cifrado César) para todas las peticiones salientes (login, ventas, etc.)
+  if (config.data && typeof config.data === 'object' && !(config.data instanceof FormData) && !(config.data as any).encrypted) {
+    config.data = encryptEnvelope(config.data)
+  }
   
   return config
 })
 
 // ===== Renovación automática de sesión =====
-// El access token dura poco (15 min por defecto en el backend). Sin este
-// interceptor, cuando expira, TODAS las peticiones empiezan a fallar con 401
-// de forma silenciosa: la app "se congela" (nada carga, ningún botón responde)
-// y el único remedio era cerrar sesión y volver a entrar. Ahora, al recibir un
-// 401, se intenta renovar el token con /auth/refresh y se reintenta la
-// petición original una sola vez. Si el refresh también falla (refresh token
-// vencido o inválido), se cierra la sesión y se redirige al login.
 let refreshPromise: Promise<string | null> | null = null
 
 async function refreshAccessToken(): Promise<string | null> {
@@ -44,13 +43,15 @@ async function refreshAccessToken(): Promise<string | null> {
   if (!refreshToken) return null
 
   try {
-    const { data } = await axios.post<{ success: boolean; data: { accessToken: string; refreshToken: string } }>(
+    const payload = encryptEnvelope({ refreshToken })
+    const { data } = await axios.post<{ success: boolean; data: any; encrypted?: boolean }>(
       `${normalizedBaseUrl}/auth/refresh`,
-      { refreshToken },
+      payload,
     )
-    localStorage.setItem('access_token', data.data.accessToken)
-    localStorage.setItem('refresh_token', data.data.refreshToken)
-    return data.data.accessToken
+    const decryptedData = (data as any)?.encrypted ? decryptEnvelope(data as any) : data
+    localStorage.setItem('access_token', decryptedData.data.accessToken)
+    localStorage.setItem('refresh_token', decryptedData.data.refreshToken)
+    return decryptedData.data.accessToken
   } catch {
     return null
   }
@@ -66,8 +67,26 @@ function clearSessionAndRedirect() {
 }
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Descifrar automáticamente respuestas cifradas con RSA + César
+    if (response.data && typeof response.data === 'object' && (response.data as any).encrypted) {
+      try {
+        response.data = decryptEnvelope(response.data as EncryptedEnvelope)
+      } catch (err) {
+        console.error('Error descifrando respuesta del servidor:', err)
+      }
+    }
+    return response
+  },
   async (error) => {
+    // Descifrar cuerpo de error si viene cifrado
+    if (error.response?.data && typeof error.response.data === 'object' && (error.response.data as any).encrypted) {
+      try {
+        error.response.data = decryptEnvelope(error.response.data as EncryptedEnvelope)
+      } catch (err) {
+        console.error('Error descifrando respuesta de error:', err)
+      }
+    }
     const originalRequest = error.config
     const isAuthEndpoint = originalRequest?.url?.includes('/auth/login') || originalRequest?.url?.includes('/auth/refresh')
 
